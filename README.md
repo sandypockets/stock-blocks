@@ -169,7 +169,7 @@ npm run build
 - `esbuild.config.mjs` - Build configuration
 
 ## License
-MIT License - see LICENSE file for details.
+See LICENSE file for details.
 
 ## Contributing
 Contributions are welcome! Please follow these steps:

@@ -188,13 +188,13 @@ export class StockChartComponent extends Component {
 		}
 
 		overlay.addEventListener('mouseenter', () => {
-			hoverLine.style.opacity = '1';
-			hoverDot.style.opacity = '1';
+			hoverLine.classList.add('visible');
+			hoverDot.classList.add('visible');
 		});
 
 		overlay.addEventListener('mouseleave', () => {
-			hoverLine.style.opacity = '0';
-			hoverDot.style.opacity = '0';
+			hoverLine.classList.remove('visible');
+			hoverDot.classList.remove('visible');
 			if (this.tooltip) {
 				hideTooltip(this.tooltip);
 			}

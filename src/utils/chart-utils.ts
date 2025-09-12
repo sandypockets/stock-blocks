@@ -481,12 +481,7 @@ export function interpolatePrice(mouseX: number, chartData: any): { price: numbe
 
 export function createTooltip(): HTMLElement {
 	const tooltip = document.createElement('div');
-	tooltip.className = 'stock-chart-tooltip';
-	tooltip.style.position = 'absolute';
-	tooltip.style.pointerEvents = 'none';
-	tooltip.style.opacity = '0';
-	tooltip.style.transition = 'opacity 0.2s ease';
-	tooltip.style.zIndex = '1000';
+	tooltip.className = 'stock-chart-tooltip hidden';
 	
 	document.body.appendChild(tooltip);
 	return tooltip;
@@ -516,8 +511,8 @@ export function updateTooltip(
 	`;
 
 	// Force a layout calculation to get accurate dimensions
-	tooltip.style.visibility = 'hidden';
-	tooltip.style.opacity = '1';
+	tooltip.classList.remove('visible');
+	tooltip.classList.add('hidden');
 	document.body.appendChild(tooltip);
 	
 	const rect = tooltip.getBoundingClientRect();
@@ -546,10 +541,11 @@ export function updateTooltip(
 	// Apply final position
 	tooltip.style.left = `${left}px`;
 	tooltip.style.top = `${top}px`;
-	tooltip.style.visibility = 'visible';
-	tooltip.style.opacity = '1';
+	tooltip.classList.remove('hidden');
+	tooltip.classList.add('visible');
 }
 
 export function hideTooltip(tooltip: HTMLElement): void {
-	tooltip.style.opacity = '0';
+	tooltip.classList.remove('visible');
+	tooltip.classList.add('hidden');
 }

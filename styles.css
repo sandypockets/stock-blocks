@@ -259,6 +259,23 @@
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 	backdrop-filter: blur(8px);
 	max-width: 200px;
+	/* Tooltip positioning and behavior */
+	position: absolute;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 0.2s ease;
+	z-index: 1000;
+	visibility: hidden;
+}
+
+.stock-chart-tooltip.visible {
+	opacity: 1;
+	visibility: visible;
+}
+
+.stock-chart-tooltip.hidden {
+	opacity: 0;
+	visibility: hidden;
 }
 
 .tooltip-price {
@@ -276,10 +293,20 @@
 /* Interactive Chart Elements */
 .interactive-chart .hover-line {
 	transition: opacity 0.2s ease;
+	opacity: 0;
+}
+
+.interactive-chart .hover-line.visible {
+	opacity: 1;
 }
 
 .interactive-chart .hover-dot {
 	transition: opacity 0.2s ease;
+	opacity: 0;
+}
+
+.interactive-chart .hover-dot.visible {
+	opacity: 1;
 }
 
 .interactive-chart .chart-overlay {
@@ -289,6 +316,11 @@
 /* Interactive Sparkline Elements */
 .interactive-sparkline .hover-dot {
 	transition: opacity 0.2s ease;
+	opacity: 0;
+}
+
+.interactive-sparkline .hover-dot.visible {
+	opacity: 1;
 }
 
 .interactive-sparkline .sparkline-overlay {

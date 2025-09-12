@@ -169,11 +169,11 @@ export class StockListComponent extends Component {
 		}
 
 		overlay.addEventListener('mouseenter', () => {
-			hoverDot.style.opacity = '1';
+			hoverDot.classList.add('visible');
 		});
 
 		overlay.addEventListener('mouseleave', () => {
-			hoverDot.style.opacity = '0';
+			hoverDot.classList.remove('visible');
 			if (this.tooltip) {
 				hideTooltip(this.tooltip);
 			}
@@ -263,7 +263,8 @@ export class StockListComponent extends Component {
 
 		tooltip.style.left = `${left}px`;
 		tooltip.style.top = `${top}px`;
-		tooltip.style.opacity = '1';
+		tooltip.classList.remove('hidden');
+		tooltip.classList.add('visible');
 	}
 
 	updateConfig(config: StockListBlockConfig): void {
@@ -324,7 +325,6 @@ export class StockListComponent extends Component {
 	private createSortableHeader(row: HTMLElement, text: string, sortKey: string): void {
 		const th = row.createEl('th', { text, cls: 'stock-list-sortable-header' });
 		th.onclick = () => this.toggleSort(sortKey as any);
-		th.style.cursor = 'pointer';
 		th.title = `Click to sort by ${text.toLowerCase()}`;
 		
 		if (this.config.sortBy === sortKey) {

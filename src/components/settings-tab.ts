@@ -13,10 +13,8 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h1', { text: 'Settings' });
-
 		new Setting(containerEl)
-			.setName('Data Source')
+			.setName('Data source')
 			.setDesc('Stock data is fetched from Yahoo Finance API with clear error messages if unavailable')
 			.addText(text => text
 				.setPlaceholder('No API key required')
@@ -24,7 +22,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 				.setDisabled(true));
 
 		new Setting(containerEl)
-			.setName('Default Days')
+			.setName('Default days')
 			.setDesc('Default number of days for historical data (used when not specified in code blocks)')
 			.addSlider(slider => slider
 				.setLimits(7, 365, 1)
@@ -36,7 +34,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('Use Business Days')
+			.setName('Use business days')
 			.setDesc('When enabled, "days" parameters are interpreted as business/trading days rather than calendar days. This ensures better data for short time periods (1-5 days).')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.useBusinessDays)
@@ -48,7 +46,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 
 
 		new Setting(containerEl)
-			.setName('Cache Duration')
+			.setName('Cache duration')
 			.setDesc('How long to cache stock data (in minutes)')
 			.addSlider(slider => slider
 				.setLimits(1, 60, 1)
@@ -61,7 +59,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('Clear Cache')
+			.setName('Clear cache')
 			.setDesc(`Clear all cached stock data (current cache: ${this.plugin.stockDataService.getCacheSize()} entries)`)
 			.addButton(button => button
 				.setButtonText('Clear Cache')
@@ -97,7 +95,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		usageContainer.createEl('p', { text: 'When only the stock is specified, the plugin will use the default settings for all other properties. But you can still override the default settings by specifying additional properties in the block.' });
 		usageContainer.createEl('p', { text: 'Below is an example of a stock block with all available properties specified. The order of properties does not matter.' });
 
-		usageContainer.createEl('h4', { text: 'Stock Block - All Properties' });
+		usageContainer.createEl('h4', { text: 'Stock Block - All properties' });
 		this.createCopyableExample(usageContainer,
 			'```stock-block\n' +
 			'stock: AAPL\n' +
@@ -145,7 +143,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 
 		usageContainer.createEl('p', { text: 'To view stocks from international exchanges like the Toronto Stock Exchange (TSX), London Stock Exchange (LSE), or others, simply append the appropriate exchange suffix to the stock symbol.' });
 
-		usageContainer.createEl('h3', { text: 'International Stock Chart' });
+		usageContainer.createEl('h4', { text: 'International stock chart' });
 		this.createCopyableExample(usageContainer,
 			'```stock-block\n' +
 			'stock: SHOP.TO\n' +
@@ -153,7 +151,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			'```'
 		);
 
-		usageContainer.createEl('h4', { text: 'Global Stock List' });
+		usageContainer.createEl('h4', { text: 'Global stock list' });
 		this.createCopyableExample(usageContainer,
 			'```stock-block-list\n' +
 			'stocks: SHOP.TO, ASML.AS, VOD.L, SAP.DE, NES.SW\n' +
@@ -165,7 +163,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		usageContainer.createEl('p', { text: 'Common exchange suffixes: ".TO" (Toronto), ".L" (London), ".PA" (Paris), ".DE" (Frankfurt), ".AS" (Amsterdam), ".SW" (Switzerland).' });
 		usageContainer.createEl('p', { text: 'Below is an example of a stock block list with all available properties specified. The order of properties does not matter.' });
 
-		usageContainer.createEl('h4', { text: 'Stock List - All Properties' });
+		usageContainer.createEl('h4', { text: 'Stock List - All properties' });
 		this.createCopyableExample(usageContainer,
 			'```stock-block-list\n' +
 			'stocks: AAPL, MSFT, NVDA, TSLA, SPY\n' +

@@ -1,6 +1,6 @@
 {
 	"name": "stock-blocks",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Display stock prices, changes, and sparkline charts in your notes with multi-stock lists and single stock charts.",
 	"main": "main.js",
 	"scripts": {
@@ -18,7 +18,7 @@
 		"charts"
 	],
 	"author": "sandypockets",
-	"license": "MIT",
+	"license": "BSD-Zero",
 	"devDependencies": {
 		"@types/node": "^16.11.6",
 		"@typescript-eslint/eslint-plugin": "^5.29.0",

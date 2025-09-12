@@ -146,6 +146,7 @@ export class StockListComponent extends Component {
 		);
 		
 		this.sparklineChartIds.push(chartId);
+		// Use innerHTML for SVG content - this is safe since we control SVG generation
 		container.innerHTML = svg;
 		this.setupSparklineInteractions(container, chartId);
 	}
@@ -232,7 +233,14 @@ export class StockListComponent extends Component {
 	): void {
 		const formattedPrice = formatPrice(price, currency);
 
-		let tooltipContent = `<div class="tooltip-price">${formattedPrice}</div>`;
+		// Clear tooltip content
+		tooltip.textContent = '';
+		
+		// Create price element
+		const priceDiv = document.createElement('div');
+		priceDiv.className = 'tooltip-price';
+		priceDiv.textContent = formattedPrice;
+		tooltip.appendChild(priceDiv);
 		
 		// Add date if timestamp is available
 		if (timestamp) {
@@ -241,10 +249,11 @@ export class StockListComponent extends Component {
 				month: 'short',
 				day: 'numeric'
 			});
-			tooltipContent += `<div class="tooltip-date">${formattedDate}</div>`;
+			const dateDiv = document.createElement('div');
+			dateDiv.className = 'tooltip-date';
+			dateDiv.textContent = formattedDate;
+			tooltip.appendChild(dateDiv);
 		}
-
-		tooltip.innerHTML = tooltipContent;
 
 		const rect = tooltip.getBoundingClientRect();
 		const tooltipWidth = rect.width || 80;

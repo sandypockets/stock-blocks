@@ -168,7 +168,31 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		linkHeader.createEl('span', { text: 'Tip - linkStyle property' });
 
 		const linkContent = linkCalloutEl.createEl('div', { cls: 'callout-content stock-callout-content' });
-		linkContent.innerHTML = 'Stock symbols in a stocklist have three format properties. They are Obsidian wikilinks by default.<br><br>- <strong>none:</strong> Plain text<br>- <strong>wikilink:</strong> [[AAPL]] Obsidian links<br>- <strong>markdown:</strong> Links to Yahoo Finance';
+		
+		const introText = linkContent.createEl('p');
+		introText.textContent = 'Stock symbols in a stocklist have three format properties. They are Obsidian wikilinks by default.';
+		
+		const list = linkContent.createEl('ul');
+		list.style.marginTop = '10px';
+		list.style.listStyleType = 'none';
+		list.style.paddingLeft = '0';
+		
+		const noneItem = list.createEl('li');
+		noneItem.style.marginBottom = '5px';
+		const noneStrong = noneItem.createEl('strong');
+		noneStrong.textContent = 'none:';
+		noneItem.appendText(' Plain text');
+		
+		const wikilinkItem = list.createEl('li');
+		wikilinkItem.style.marginBottom = '5px';
+		const wikilinkStrong = wikilinkItem.createEl('strong');
+		wikilinkStrong.textContent = 'wikilink:';
+		wikilinkItem.appendText(' [[AAPL]] Obsidian links');
+		
+		const markdownItem = list.createEl('li');
+		const markdownStrong = markdownItem.createEl('strong');
+		markdownStrong.textContent = 'markdown:';
+		markdownItem.appendText(' Links to Yahoo Finance');
 	}
 
 	private createCopyableExample(container: HTMLElement, codeText: string): void {

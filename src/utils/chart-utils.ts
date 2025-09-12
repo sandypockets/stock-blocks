@@ -505,19 +505,22 @@ export function updateTooltip(
 		hour12: true
 	});
 
-	tooltip.innerHTML = `
-		<div class="tooltip-price">${formattedPrice}</div>
-		<div class="tooltip-date">${formattedDate}</div>
-	`;
-
-	// Force a layout calculation to get accurate dimensions
-	tooltip.classList.remove('visible');
-	tooltip.classList.add('hidden');
-	document.body.appendChild(tooltip);
+	tooltip.textContent = '';
 	
+	const priceDiv = document.createElement('div');
+	priceDiv.className = 'tooltip-price';
+	priceDiv.textContent = formattedPrice;
+	tooltip.appendChild(priceDiv);
+	
+	const dateDiv = document.createElement('div');
+	dateDiv.className = 'tooltip-date';
+	dateDiv.textContent = formattedDate;
+	tooltip.appendChild(dateDiv);
+
+	// Get dimensions for positioning without hiding the tooltip
 	const rect = tooltip.getBoundingClientRect();
-	const tooltipWidth = rect.width;
-	const tooltipHeight = rect.height;
+	const tooltipWidth = rect.width || 80;
+	const tooltipHeight = rect.height || 30;
 
 	// Calculate optimal position
 	let left = x + 15;

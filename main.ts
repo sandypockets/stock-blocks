@@ -143,7 +143,7 @@ export default class StockTickerPlugin extends Plugin {
 		const errorContainer = el.createEl('div', { cls: 'stock-error-container' });
 		
 		const iconEl = errorContainer.createEl('span', { cls: 'stock-error-icon' });
-		iconEl.innerHTML = '⚠️';
+		iconEl.textContent = '⚠️';
 		
 		const messageEl = errorContainer.createEl('div', { cls: 'stock-error-message' });
 		messageEl.setText(message);

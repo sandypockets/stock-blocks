@@ -163,6 +163,7 @@ export class StockChartComponent extends Component {
 		);
 
 		this.currentChartId = chartId;
+		// Use innerHTML for SVG content - this is safe since we control SVG generation
 		container.innerHTML = svg;
 		
 		this.setupChartInteractions(container, chartId);
@@ -183,7 +184,6 @@ export class StockChartComponent extends Component {
 		try {
 			chartData = JSON.parse(chartDataAttr);
 		} catch (e) {
-			// Failed to parse chart data - fail silently
 			return;
 		}
 

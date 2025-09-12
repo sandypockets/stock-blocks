@@ -74,12 +74,10 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 				}));
 
 
-		const usageHeader = containerEl.createEl('h2', { text: 'Using the plugin' });
-		usageHeader.style.fontSize = '1.5rem';
-		usageHeader.style.fontWeight = 'bold';
-		usageHeader.style.marginTop = '2rem';
-		usageHeader.style.marginBottom = '1rem';
-		usageHeader.style.color = 'var(--text-normal)';
+		const usageHeader = containerEl.createEl('h2', { 
+			text: 'Using the plugin',
+			cls: 'stock-blocks-usage-header'
+		});
 		
 		containerEl.createEl('p', { text: 'Using the plugin is as easy as specifying a single stock symbol in your markdown.' });
 		
@@ -112,26 +110,11 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		);
 
 		const calloutEl = usageContainer.createEl('div', { cls: 'stock-callout' });
-		calloutEl.style.background = 'var(--background-secondary)';
-		calloutEl.style.border = '1px solid var(--background-modifier-border)';
-		calloutEl.style.borderLeft = '4px solid var(--text-accent)';
-		calloutEl.style.borderRadius = '4px';
-		calloutEl.style.padding = '12px 16px';
-		calloutEl.style.margin = '12px 0';
-		calloutEl.style.fontSize = '14px';
-		calloutEl.style.lineHeight = '1.4';
 		
-		const noteHeader = calloutEl.createEl('div', { cls: 'callout-title' });
-		noteHeader.style.fontWeight = 'bold';
-		noteHeader.style.color = 'var(--text-accent)';
-		noteHeader.style.marginBottom = '4px';
-		noteHeader.style.display = 'flex';
-		noteHeader.style.alignItems = 'center';
-		noteHeader.style.gap = '6px';
+		const noteHeader = calloutEl.createEl('div', { cls: 'callout-title stock-callout-title' });
 		noteHeader.createEl('span', { text: 'Tip - stock property' });
 
-		const noteContent = calloutEl.createEl('div', { cls: 'callout-content' });
-		noteContent.style.color = 'var(--text-normal)';
+		const noteContent = calloutEl.createEl('div', { cls: 'callout-content stock-callout-content' });
 		noteContent.textContent = 'The main `stock` property is flexible. You can also use `symbol`, `ticker`, or even plural forms like `stocks` or `tickers`.';
 
 		usageContainer.createEl('h3', { text: 'Stock Block List' });
@@ -180,26 +163,11 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		);
 
 		const linkCalloutEl = usageContainer.createEl('div', { cls: 'stock-callout' });
-		linkCalloutEl.style.background = 'var(--background-secondary)';
-		linkCalloutEl.style.border = '1px solid var(--background-modifier-border)';
-		linkCalloutEl.style.borderLeft = '4px solid var(--text-accent)';
-		linkCalloutEl.style.borderRadius = '4px';
-		linkCalloutEl.style.padding = '12px 16px';
-		linkCalloutEl.style.margin = '12px 0';
-		linkCalloutEl.style.fontSize = '14px';
-		linkCalloutEl.style.lineHeight = '1.4';
 		
-		const linkHeader = linkCalloutEl.createEl('div', { cls: 'callout-title' });
-		linkHeader.style.fontWeight = 'bold';
-		linkHeader.style.color = 'var(--text-accent)';
-		linkHeader.style.marginBottom = '4px';
-		linkHeader.style.display = 'flex';
-		linkHeader.style.alignItems = 'center';
-		linkHeader.style.gap = '6px';
+		const linkHeader = linkCalloutEl.createEl('div', { cls: 'callout-title stock-callout-title' });
 		linkHeader.createEl('span', { text: 'Tip - linkStyle property' });
 
-		const linkContent = linkCalloutEl.createEl('div', { cls: 'callout-content' });
-		linkContent.style.color = 'var(--text-normal)';
+		const linkContent = linkCalloutEl.createEl('div', { cls: 'callout-content stock-callout-content' });
 		linkContent.innerHTML = 'Stock symbols in a stocklist have three format properties. They are Obsidian wikilinks by default.<br><br>- <strong>none:</strong> Plain text<br>- <strong>wikilink:</strong> [[AAPL]] Obsidian links<br>- <strong>markdown:</strong> Links to Yahoo Finance';
 	}
 
@@ -216,24 +184,10 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		});
 		textArea.value = codeText;
 
-		// Make it look like a code block
-		textArea.style.fontFamily = 'monospace';
-		textArea.style.fontSize = '13px';
-		textArea.style.background = 'var(--background-secondary)';
-		textArea.style.border = '1px solid var(--background-modifier-border)';
-		textArea.style.borderRadius = '4px';
-		textArea.style.padding = '8px';
-		textArea.style.width = '100%';
-		textArea.style.resize = 'none';
-		textArea.style.color = 'var(--text-normal)';
-
 		const copyButton = exampleContainer.createEl('button', {
 			cls: 'stock-copy-button',
 			text: 'Copy'
 		});
-		copyButton.style.marginTop = '4px';
-		copyButton.style.padding = '4px 8px';
-		copyButton.style.fontSize = '12px';
 
 		copyButton.addEventListener('click', async () => {
 			try {

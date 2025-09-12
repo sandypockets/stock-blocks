@@ -616,3 +616,36 @@ p.stock-list-description {
 .stock-copy-button:active {
 	transform: translateY(0);
 }
+
+/* Settings tab specific styles */
+.stock-blocks-usage-header {
+	font-size: 1.5rem !important;
+	font-weight: bold !important;
+	margin-top: 2rem !important;
+	margin-bottom: 1rem !important;
+	color: var(--text-normal) !important;
+}
+
+.stock-callout {
+	background: var(--background-secondary) !important;
+	border: 1px solid var(--background-modifier-border) !important;
+	border-left: 4px solid var(--text-accent) !important;
+	border-radius: 4px !important;
+	padding: 12px 16px !important;
+	margin: 12px 0 !important;
+	font-size: 14px !important;
+	line-height: 1.4 !important;
+}
+
+.stock-callout-title {
+	font-weight: bold !important;
+	color: var(--text-accent) !important;
+	margin-bottom: 4px !important;
+	display: flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+}
+
+.stock-callout-content {
+	color: var(--text-normal) !important;
+}

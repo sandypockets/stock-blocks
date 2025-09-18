@@ -317,6 +317,15 @@ height: 50
 linkStyle: markdown
 ```
 
+### Without Sparklines (Data Only)
+```stock-block-list
+tickers: SPY, QQQ, VTI, IWM, DIA
+days: 30
+sparkline: false
+title: Market Indices - Data Only
+description: Clean table showing just prices and changes without charts
+```
+
 ## Notes
 
 - Stock data is fetched from **Yahoo Finance API** for real-time prices

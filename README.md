@@ -55,6 +55,7 @@ If you need more customization, you can use additional properties:
 - `width`: Width of sparklines in pixels (default: 500, capped at 120 for table display)
 - `height`: Height of sparklines in pixels (default: 300, capped at 40 for table display)
 - `linkStyle`: How to display symbols - `none`, `wikilink`, or `markdown` (default: none)
+- `sparkline`: Whether to show sparkline charts in the table (default: true)
 - `refreshInterval`: Auto-refresh interval in minutes (optional)
 - `title`: Custom title text (optional, defaults to "Stock List")
 - `description`: Descriptive text shown below the title (optional)

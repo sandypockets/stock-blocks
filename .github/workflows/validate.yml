@@ -1,0 +1,113 @@
+name: Validate Plugin
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate version consistency
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          MANIFEST_VERSION=$(node -p "require('./manifest.json').version")
+          
+          echo "Package.json version: $PACKAGE_VERSION"
+          echo "Manifest.json version: $MANIFEST_VERSION"
+          
+          if [ "$PACKAGE_VERSION" != "$MANIFEST_VERSION" ]; then
+            echo "❌ Version mismatch detected!"
+            echo "   package.json: $PACKAGE_VERSION"
+            echo "   manifest.json: $MANIFEST_VERSION"
+            echo ""
+            echo "Please ensure both files have the same version number."
+            echo "You can run 'npm version patch/minor/major' to update both automatically."
+            exit 1
+          fi
+          
+          echo "✅ Version consistency check passed"
+
+      - name: Validate manifest.json structure
+        run: |
+          node -e "
+          const manifest = require('./manifest.json');
+          const required = ['id', 'name', 'version', 'minAppVersion', 'description'];
+          const missing = required.filter(key => !manifest[key]);
+          
+          if (missing.length > 0) {
+            console.error('❌ Missing required manifest.json fields:', missing);
+            process.exit(1);
+          }
+          
+          if (!/^\d+\.\d+\.\d+$/.test(manifest.version)) {
+            console.error('❌ Invalid version format in manifest.json. Expected semver (x.y.z)');
+            process.exit(1);
+          }
+          
+          console.log('✅ Manifest.json structure is valid');
+          "
+
+      - name: Lint code
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Test build
+        run: npm run build
+
+      - name: Verify build output
+        run: |
+          if [ ! -f "main.js" ]; then
+            echo "❌ Build failed: main.js was not generated"
+            exit 1
+          fi
+          
+          # Check if main.js is not empty
+          if [ ! -s "main.js" ]; then
+            echo "❌ Build failed: main.js is empty"
+            exit 1
+          fi
+          
+          echo "✅ Build completed successfully"
+          echo "📊 Build size: $(wc -c < main.js) bytes"
+
+      - name: Validate release assets
+        run: |
+          echo "🔍 Validating required release assets..."
+          
+          REQUIRED_FILES=("main.js" "manifest.json" "styles.css")
+          MISSING_FILES=()
+          
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              MISSING_FILES+=("$file")
+            else
+              echo "✅ Found: $file ($(wc -c < "$file") bytes)"
+            fi
+          done
+          
+          if [ ${#MISSING_FILES[@]} -ne 0 ]; then
+            echo "❌ Missing required files for release:"
+            printf '   - %s\n' "${MISSING_FILES[@]}"
+            exit 1
+          fi
+          
+          echo "✅ All required release assets are present"

@@ -47,7 +47,9 @@ export class StockListComponent extends Component {
 		this.createSortableHeader(headerRow, 'Symbol', 'symbol');
 		this.createSortableHeader(headerRow, 'Price', 'price');
 		this.createSortableHeader(headerRow, 'Change', 'changePercent');
-		headerRow.createEl('th', { text: 'Chart' });
+		if (this.config.sparkline !== false) {
+			headerRow.createEl('th', { text: 'Chart' });
+		}
 
 		const tbody = table.createEl('tbody');
 		
@@ -66,8 +68,10 @@ export class StockListComponent extends Component {
 				cls: stock.changePercent >= 0 ? 'stock-change-positive' : 'stock-change-negative'
 			});
 			
-			const chartCell = row.createEl('td', { cls: 'stock-chart-cell' });
-			this.renderSparkline(chartCell, stock);
+			if (this.config.sparkline !== false) {
+				const chartCell = row.createEl('td', { cls: 'stock-chart-cell' });
+				this.renderSparkline(chartCell, stock);
+			}
 		}
 
 		if (this.config.showLastUpdate !== false) {

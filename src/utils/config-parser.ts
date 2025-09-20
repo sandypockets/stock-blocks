@@ -60,6 +60,9 @@ export function parseStockListConfig(content: string, settings?: StockTickerSett
 				const refreshInterval = parseInt(value, 10);
 				config.refreshInterval = isNaN(refreshInterval) ? undefined : refreshInterval;
 				break;
+			case 'sparkline':
+				config.sparkline = value.toLowerCase() === 'true';
+				break;
 		}
 	}
 	
@@ -75,6 +78,7 @@ export function parseStockListConfig(content: string, settings?: StockTickerSett
 		sortOrder: config.sortOrder,
 		showLastUpdate: config.showLastUpdate,
 		refreshInterval: config.refreshInterval,
+		sparkline: config.sparkline ?? (settings?.defaultShowSparklines ?? true), // Use plugin default setting
 	};
 }
 

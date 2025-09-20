@@ -20,6 +20,7 @@ export interface StockListBlockConfig {
 	description?: string;
 	sortBy?: 'symbol' | 'price' | 'changePercent';
 	sortOrder?: 'asc' | 'desc';
+	sparkline?: boolean;
 }
 
 export interface SingleStockBlockConfig {
@@ -43,6 +44,7 @@ export interface StockTickerSettings {
 	defaultHeight: number;
 	useBusinessDays: boolean; // whether to interpret 'days' as business days
 	minDataPoints: number; // minimum data points for chart rendering
+	defaultShowSparklines: boolean;
 }
 
 export interface CacheEntry {

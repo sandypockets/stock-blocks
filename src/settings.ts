@@ -8,6 +8,7 @@ export const DEFAULT_SETTINGS: StockTickerSettings = {
 	defaultHeight: 300,
 	useBusinessDays: true, // Interpret 'days' as business days by default
 	minDataPoints: 2, // Minimum data points for chart rendering
+	defaultShowSparklines: true,
 };
 
 export type { StockTickerSettings };

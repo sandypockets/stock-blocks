@@ -44,6 +44,16 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
+		new Setting(containerEl)
+			.setName('Show sparklines by default')
+			.setDesc('Default setting for displaying sparkline charts in stock lists. This can be overridden per code block using the "sparkline" property.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.defaultShowSparklines)
+				.onChange(async (value) => {
+					this.plugin.settings.defaultShowSparklines = value;
+					await this.plugin.saveSettings();
+				}));
+
 
 		new Setting(containerEl)
 			.setName('Cache duration')
@@ -153,7 +163,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			'days: 365\n' +
 			'width: 900\n' +
 			'height: 400\n' +
-			'showAxes: false\n' +
+			'sparkline: true\n' +
 			'linkStyle: none | wikilink | markdown\n' +
 			'showLastUpdate: true\n' +
 			'refreshInterval: 15\n' +

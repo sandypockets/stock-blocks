@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/sandypockets/stock-blocks/blob/main/README.md
+    about: Check out the plugin documentation and examples
+  - name: 🔗 Obsidian Community
+    url: https://obsidian.md/community
+    about: Get help from the broader Obsidian community

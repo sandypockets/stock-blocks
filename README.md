@@ -3,7 +3,7 @@
 [![GitHub Release](https://img.shields.io/github/v/release/sandypockets/stock-blocks)](https://github.com/sandypockets/stock-blocks/releases)
 [![Bundle Size](https://img.shields.io/github/languages/code-size/sandypockets/stock-blocks)](https://github.com/sandypockets/stock-blocks)
 [![License](https://img.shields.io/github/license/sandypockets/stock-blocks)](https://github.com/sandypockets/stock-blocks/blob/main/LICENSE)
-[![Downloads](https://img.shields.io/github/downloads/sandypockets/stock-blocks/total)](https://github.com/sandypockets/stock-blocks/releases)
+[![Downloads](https://img.shields.io/github/downloads/sandypockets/stock-blocks/total?color=brightgreen)](https://github.com/sandypockets/stock-blocks/releases)
 [![Last Commit](https://img.shields.io/github/last-commit/sandypockets/stock-blocks)](https://github.com/sandypockets/stock-blocks/commits/main)
 [![GitHub Issues](https://img.shields.io/github/issues/sandypockets/stock-blocks)](https://github.com/sandypockets/stock-blocks/issues)
 

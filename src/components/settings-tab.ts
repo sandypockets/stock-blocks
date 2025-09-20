@@ -84,7 +84,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 				}));
 
 
-		const usageHeader = containerEl.createEl('h2', { 
+		containerEl.createEl('h2', { 
 			text: 'Using the plugin',
 			cls: 'stock-blocks-usage-header'
 		});

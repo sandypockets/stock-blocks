@@ -30,7 +30,30 @@ A separate validation workflow runs on all pushes and pull requests to:
 
 ### Creating a New Release
 
-#### Method 1: Using npm version (Recommended)
+#### Method 1: Using update-version script (Recommended)
+
+```bash
+# For bug fixes
+npm run update-version patch
+
+# For new features
+npm run update-version minor
+
+# For breaking changes
+npm run update-version major
+
+# Review changes, test, then commit and push
+git add .
+git commit -m "Bump version to x.x.x"
+git push origin main
+```
+
+This method:
+- Updates both `package.json` and `manifest.json` versions
+- Gives you control over when to commit and push
+- Ensures version consistency between files
+
+#### Method 2: Using npm version (Alternative)
 
 ```bash
 # For bug fixes
@@ -49,10 +72,10 @@ git push origin main --follow-tags
 This method:
 - Updates `package.json` version
 - Runs the `version` script which updates `manifest.json` and `versions.json`
-- Creates a git commit and tag
+- Creates a git commit and tag automatically
 - When pushed, triggers the automatic release
 
-#### Method 2: Manual Version Update
+#### Method 3: Manual Version Update
 
 1. Update the version in both `package.json` and `manifest.json`:
    ```json
@@ -72,7 +95,7 @@ This method:
 
    # Change "1.3.0" to your desired version
    git commit -m "Bump version to 1.3.0"
-   
+
    git push origin main
    ```
 

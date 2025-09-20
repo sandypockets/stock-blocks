@@ -1,17 +1,26 @@
 # Stock Blocks Plugin for Obsidian
 
-Display stock prices, changes, and sparkline charts in your Obsidian notes with multiple display and sorting options. The plugin uses the free Yahoo Finance API to fetch real stock data without requiring an API key. 
+Display stock prices, changes, and sparkline charts in your Obsidian notes with multiple display and sorting options.
+
+- Zero dependencies. We don't use any third party libraries for charts or data fetching.
+- Uses the free Yahoo Finance API to fetch real stock data without requiring an API key.
 
 Data can be displayed 2 ways:
-- As a compact table of multiple stocks with sparklines using the `stock-block-list` code block
-- As a larger detailed chart for a single stock using the `stock-block` code block
+
+As a compact table of multiple stocks with sparklines using the `stock-block-list` code block
+
+![Stock Block List](/docs/stock-block-list.jpg)
+
+Or as a larger detailed chart for a single stock using the `stock-block` code block
+
+![Stock Block](/docs/stock-block.jpg)
 
 To learn how to set up each of those components, see the **Usage Examples** section below.
 
 ## Features
 
 ### Multi-Currency Support
-- **Automatic currency detection** based on stock exchange suffixes
+- Automatic currency detection based on stock exchange suffixes
 - Supports USD, CAD, EUR, GBP, JPY, AUD, HKD
 - Prices displayed with proper currency symbols ($ € £ ¥ etc.)
 - Examples: AAPL (USD), SHOP.TO (CAD), SAP.DE (EUR), ASML.AS (EUR)
@@ -82,7 +91,6 @@ If you need more customization, you can use additional properties:
 - `description`: Descriptive text shown below the title (optional)
 
 ### International Stocks and Currency Examples
-
 The plugin automatically detects currencies based on stock exchange suffixes:
 
 ````markdown
@@ -101,7 +109,6 @@ title: Nestlé S.A. (Swiss Exchange)
 description: Swiss stock showing CHF currency formatting
 ```
 
-
 Currency Detection Examples:
 - `AAPL` → USD ($)
 - `SHOP.TO` → CAD (CA$)
@@ -112,7 +119,6 @@ Currency Detection Examples:
 - `0700.HK` → HKD (HK$)
 
 ## Data Source
-
 The plugin fetches real stock data from Yahoo Finance API, which provides free access to:
 
 - Current stock prices
@@ -133,15 +139,24 @@ Supported Symbols:
 
 The plugin automatically handles API errors and will display clear error messages if the Yahoo Finance service is temporarily unavailable.
 
+## Beta testing
+To test the newest versions of the plugin before official releases, you can install the beta builds using the BRAT plugin. 
+
+1. Install the [BRAT plugin](https://obsidian.md/plugins?id=obsidian42-brat) from the [Obsidian Community Plugins](https://obsidian.md/plugins).
+2. In Obsidian, open the BRAT plugin settings.
+3. Click **Add Beta plugin**.
+4. Enter the repository URL: `https://github.com/sandypockets/stock-blocks`
+
+This will cause the plugin to automatically update whenever there are changes made to the `main` branch of this repository. If you want to pin to a specific version, then you can also do that in BRAT. To do so, look for **Add Beta plugin with frozen version** in the BRAT settings.
+
+You can learn more about BRAT and how to use it in the [BRAT documentation](https://github.com/TfTHacker/obsidian42-brat).
+
 ## Development
 
 ### Setup
 ```bash
-# Clone the repository
-git clone <repository-url>
+git clone https://github.com/sandypockets/stock-blocks.git
 cd stock-blocks
-
-# Install dependencies
 npm install
 ```
 
@@ -149,34 +164,16 @@ npm install
 ```bash
 # Development build with watch mode (recommended during development)
 npm run dev
-
-# Production build (for releases)
+```
+```bash
 npm run build
 ```
-
-### Testing
-1. Run `npm run build` or `npm run dev`
-2. Copy `main.js`, `manifest.json`, and `styles.css` to your test vault:
-   ```
-   <vault>/.obsidian/plugins/stock-blocks/
-   ```
-3. Reload Obsidian and enable the plugin in **Settings > Community plugins**
-
-### Project Structure
-- `main.ts` - Plugin entry point (compiles to `main.js`)
-- `src/` - Source code modules
-- `manifest.json` - Plugin metadata
-- `styles.css` - Plugin styles
-- `esbuild.config.mjs` - Build configuration
-
-## License
-See LICENSE file for details.
 
 ## Contributing
 Contributions are welcome! Please follow these steps:
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
+2. Create a feature branch: `git checkout -b feature/name-of-your-feature`
 3. Make your changes in TypeScript (`main.ts` and `src/` files)
 4. Test your changes:
    - Run `npm run dev` for development builds with watch mode
@@ -184,6 +181,8 @@ Contributions are welcome! Please follow these steps:
 5. Run `npm run build` to ensure production build works
 6. Submit a pull request
 
-## Disclaimer
+## License
+See LICENSE file for details.
 
+## Disclaimer
 This plugin is for educational and informational purposes only. Stock data is provided by Yahoo Finance and should not be used as the sole basis for investment decisions. Always consult with financial professionals and verify data with official sources before making investment decisions. If the Yahoo Finance API is unavailable, the plugin will display error messages.

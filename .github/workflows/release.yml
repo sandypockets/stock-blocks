@@ -1,5 +1,10 @@
 name: Release Obsidian Plugin
 
+# Add permissions for the workflow
+permissions:
+  contents: write
+  pull-requests: read
+
 on:
   push:
     branches:

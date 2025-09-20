@@ -126,48 +126,21 @@ jobs:
 
       - name: Create Release
         id: create-release
-        uses: actions/create-release@v1
+        run: |
+          VERSION="${{ needs.check-version.outputs.version }}"
+          
+          # Create release using GitHub CLI
+          gh release create "$VERSION" \
+            --title "$VERSION" \
+            --notes-file release-notes.md \
+            ./main.js \
+            ./manifest.json \
+            ./styles.css
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ needs.check-version.outputs.version }}
-          release_name: ${{ needs.check-version.outputs.version }}
-          body_path: release-notes.md
-          draft: false
-          prerelease: false
-
-      - name: Upload main.js
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create-release.outputs.upload_url }}
-          asset_path: ./main.js
-          asset_name: main.js
-          asset_content_type: application/javascript
-
-      - name: Upload manifest.json
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create-release.outputs.upload_url }}
-          asset_path: ./manifest.json
-          asset_name: manifest.json
-          asset_content_type: application/json
-
-      - name: Upload styles.css
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create-release.outputs.upload_url }}
-          asset_path: ./styles.css
-          asset_name: styles.css
-          asset_content_type: text/css
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release completed
         run: |
           echo "🎉 Release ${{ needs.check-version.outputs.version }} created successfully!"
           echo "📦 Assets uploaded: main.js, manifest.json, styles.css"
-          echo "🔗 Release URL: ${{ steps.create-release.outputs.html_url }}"
+          echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ needs.check-version.outputs.version }}"

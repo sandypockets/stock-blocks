@@ -6,11 +6,12 @@ Display stock prices, changes, and sparkline charts in your Obsidian notes with 
 - Uses the free Yahoo Finance API to fetch real stock data without requiring an API key.
 
 Data can be displayed 2 ways:
+
 As a compact table of multiple stocks with sparklines using the `stock-block-list` code block
 
 ![Stock Block List](/docs/stock-block-list.jpg)
 
-As a larger detailed chart for a single stock using the `stock-block` code block
+Or as a larger detailed chart for a single stock using the `stock-block` code block
 
 ![Stock Block](/docs/stock-block.jpg)
 

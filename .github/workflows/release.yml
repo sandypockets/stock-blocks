@@ -1,0 +1,173 @@
+name: Release Obsidian Plugin
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'package.json'
+      - 'manifest.json'
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      should-release: ${{ steps.version.outputs.should-release }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if version changed
+        id: version
+        run: |
+          # Get the current versions
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          MANIFEST_VERSION=$(node -p "require('./manifest.json').version")
+          
+          echo "Package version: $PACKAGE_VERSION"
+          echo "Manifest version: $MANIFEST_VERSION"
+          
+          # Check if versions match
+          if [ "$PACKAGE_VERSION" != "$MANIFEST_VERSION" ]; then
+            echo "❌ Version mismatch between package.json ($PACKAGE_VERSION) and manifest.json ($MANIFEST_VERSION)"
+            exit 1
+          fi
+          
+          # Check if this version already has a release
+          if git tag -l | grep -q "^$PACKAGE_VERSION$"; then
+            echo "🏷️  Version $PACKAGE_VERSION already has a release tag"
+            echo "should-release=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Check if version changed in the last commit
+          git diff HEAD~1 HEAD --name-only | grep -E "(package\.json|manifest\.json)" || {
+            echo "📝 No version files changed in this commit"
+            echo "should-release=false" >> $GITHUB_OUTPUT
+            exit 0
+          }
+          
+          # Get previous versions to compare
+          PREV_PACKAGE_VERSION=$(git show HEAD~1:package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8')).version" 2>/dev/null || echo "0.0.0")
+          PREV_MANIFEST_VERSION=$(git show HEAD~1:manifest.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8')).version" 2>/dev/null || echo "0.0.0")
+          
+          echo "Previous package version: $PREV_PACKAGE_VERSION"
+          echo "Previous manifest version: $PREV_MANIFEST_VERSION"
+          
+          # Check if version actually changed
+          if [ "$PACKAGE_VERSION" != "$PREV_PACKAGE_VERSION" ] || [ "$MANIFEST_VERSION" != "$PREV_MANIFEST_VERSION" ]; then
+            echo "🚀 Version changed from $PREV_PACKAGE_VERSION to $PACKAGE_VERSION - will create release"
+            echo "version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+            echo "should-release=true" >> $GITHUB_OUTPUT
+          else
+            echo "📝 Version unchanged - no release needed"
+            echo "should-release=false" >> $GITHUB_OUTPUT
+          fi
+
+  release:
+    needs: check-version
+    if: needs.check-version.outputs.should-release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint code
+        run: npm run lint
+
+      - name: Build plugin
+        run: npm run build
+
+      - name: Verify build artifacts
+        run: |
+          if [ ! -f "main.js" ]; then
+            echo "❌ main.js not found after build"
+            exit 1
+          fi
+          
+          if [ ! -f "manifest.json" ]; then
+            echo "❌ manifest.json not found"
+            exit 1
+          fi
+          
+          # Verify versions still match after build
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          MANIFEST_VERSION=$(node -p "require('./manifest.json').version")
+          
+          if [ "$PACKAGE_VERSION" != "$MANIFEST_VERSION" ]; then
+            echo "❌ Version mismatch after build: package.json ($PACKAGE_VERSION) vs manifest.json ($MANIFEST_VERSION)"
+            exit 1
+          fi
+          
+          echo "✅ Build verification passed"
+          echo "📦 Built plugin version: $PACKAGE_VERSION"
+
+      - name: Create release notes
+        id: release-notes
+        run: |
+          VERSION="${{ needs.check-version.outputs.version }}"
+          
+          # Create release notes
+          cat > release-notes.md << EOF
+          ## Stock Blocks Plugin v$VERSION
+          EOF
+
+      - name: Create Release
+        id: create-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.check-version.outputs.version }}
+          release_name: ${{ needs.check-version.outputs.version }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: false
+
+      - name: Upload main.js
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          asset_path: ./main.js
+          asset_name: main.js
+          asset_content_type: application/javascript
+
+      - name: Upload manifest.json
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          asset_path: ./manifest.json
+          asset_name: manifest.json
+          asset_content_type: application/json
+
+      - name: Upload styles.css
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          asset_path: ./styles.css
+          asset_name: styles.css
+          asset_content_type: text/css
+
+      - name: Release completed
+        run: |
+          echo "🎉 Release ${{ needs.check-version.outputs.version }} created successfully!"
+          echo "📦 Assets uploaded: main.js, manifest.json, styles.css"
+          echo "🔗 Release URL: ${{ steps.create-release.outputs.html_url }}"

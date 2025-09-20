@@ -124,9 +124,34 @@ jobs:
         run: |
           VERSION="${{ needs.check-version.outputs.version }}"
           
-          # Create release notes
+          # Generate SHA256 checksums for all release assets
+          MAIN_SHA=$(sha256sum main.js | cut -d' ' -f1)
+          MANIFEST_SHA=$(sha256sum manifest.json | cut -d' ' -f1)
+          STYLES_SHA=$(sha256sum styles.css | cut -d' ' -f1)
+          
+          # Create release notes with checksums
           cat > release-notes.md << EOF
           ## Stock Blocks Plugin v$VERSION
+          
+          ### Checksums (SHA256)
+          \`\`\`
+          main.js:      $MAIN_SHA
+          manifest.json: $MANIFEST_SHA
+          styles.css:   $STYLES_SHA
+          \`\`\`
+          
+          ### Verification
+          After downloading, verify file integrity:
+          \`\`\`bash
+          sha256sum main.js manifest.json styles.css
+          \`\`\`
+          EOF
+          
+          # Also create a separate checksums file
+          cat > SHA256SUMS << EOF
+          $MAIN_SHA  main.js
+          $MANIFEST_SHA  manifest.json
+          $STYLES_SHA  styles.css
           EOF
 
       - name: Create Release
@@ -140,12 +165,14 @@ jobs:
             --notes-file release-notes.md \
             ./main.js \
             ./manifest.json \
-            ./styles.css
+            ./styles.css \
+            ./SHA256SUMS
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release completed
         run: |
           echo "🎉 Release ${{ needs.check-version.outputs.version }} created successfully!"
-          echo "📦 Assets uploaded: main.js, manifest.json, styles.css"
+          echo "📦 Assets uploaded: main.js, manifest.json, styles.css, SHA256SUMS"
+          echo "🔐 SHA256 checksums included for security verification"
           echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ needs.check-version.outputs.version }}"

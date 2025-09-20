@@ -12,9 +12,6 @@
 
 Display stock prices, changes, and sparkline charts in your Obsidian notes with multiple display and sorting options.
 
-- Zero dependencies. We don't use any third party libraries for charts, or anything else.
-- Uses the free Yahoo Finance API to fetch real stock data without requiring an API key.
-
 Data can be displayed 2 ways:
 
 As a compact table of multiple stocks with sparklines using the `stock-block-list` code block
@@ -26,6 +23,32 @@ Or as a larger detailed chart for a single stock using the `stock-block` code bl
 ![Stock Block](/docs/stock-block.jpg)
 
 To learn how to set up each of those components, see the **Usage Examples** section below.
+
+## Security & Code Integrity
+
+We prioritize security and transparency in this plugin:
+- Zero Dependencies - No third-party libraries means a smaller attack surface and easier security auditing
+- Immutable Releases - Every release is automatically built and cryptographically signed with SHA256 checksums
+- Verifiable Downloads - Each release includes SHA256SUMS file for integrity verification
+- Transparent Build Process - All releases are built via automated GitHub Actions - no manual compilation or uploads
+- Open Source - Full source code available for security review and auditing
+
+### Why Verify Downloads?
+
+To help verify that files within a release have not been tampered with or modified, every release includes a "fingerprint" (called a SHA256 checksum) for each file.
+
+Think of it like a tamper-evident seal - if anyone modifies even a single character in the plugin files, the fingerprint will completely change. This lets you verify that the files you downloaded are exactly the same ones that were automatically built and released, ensuring that the code you see in the repo is the same code you receive when you download the plugin.
+
+You can compare these SHA256 checksums against your downloaded files to ensure they haven't been modified. The checksums are also displayed directly in each release's notes for easy verification.
+
+### How to Verify Downloads
+After downloading the plugin files from a release, you can verify their integrity using the following command in your terminal:
+
+```bash
+sha256sum main.js manifest.json styles.css
+```
+
+Those commands will output a SHA256 checksum for each file. You can then compare those checksums against the values listed in the `SHA256SUMS` file included in the release, which you can view directly in the release notes.
 
 ## Features
 

@@ -98,6 +98,7 @@ If you need more customization, you can use additional properties:
 - `height`: Height of sparklines in pixels (default: 300, capped at 40 for table display)
 - `linkStyle`: How to display symbols - `none`, `wikilink`, or `markdown` (default: none)
 - `sparkline`: Whether to show sparkline charts in the table (default: true)
+- `showTodayChange`: Show today's change as separate column when days >= 2 (default: false)
 - `refreshInterval`: Auto-refresh interval in minutes (optional)
 - `title`: Custom title text (optional, defaults to "Stock List")
 - `description`: Descriptive text shown below the title (optional)
@@ -120,6 +121,7 @@ If you need more customization, you can use additional properties:
 - `showAxes`: Show price and date axes (default: true)
 - `refreshInterval`: Auto-refresh interval in minutes (optional)
 - `showLastUpdate`: Show last update timestamp and refresh controls (default: true)
+- `showTodayChange`: Show today's change alongside period change when days >= 2 (default: false)
 - `title`: Custom title text (optional, shows above the stock symbol and price)
 - `description`: Descriptive text shown below the title (optional)
 
@@ -135,12 +137,14 @@ description: Stocks from US (USD), Canada (CAD), Germany (EUR), Netherlands (EUR
 ```
 ````
 
+````markdown
 ```stock-block
 symbol: NESN.SW
 days: 60
 title: Nestlé S.A. (Swiss Exchange)
 description: Swiss stock showing CHF currency formatting
 ```
+````
 
 Currency Detection Examples:
 - `AAPL` → USD ($)

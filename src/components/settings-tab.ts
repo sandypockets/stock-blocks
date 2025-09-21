@@ -113,6 +113,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			'showAxes: true\n' +
 			'linkStyle: none | wikilink | markdown\n' +
 			'showLastUpdate: true\n' +
+			'showTodayChange: true\n' +
 			'refreshInterval: 15\n' +
 			'title: Apple Inc. Stock Performance\n' +
 			'description: One year price chart\n' +
@@ -166,6 +167,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			'sparkline: true\n' +
 			'linkStyle: none | wikilink | markdown\n' +
 			'showLastUpdate: true\n' +
+			'showTodayChange: true\n' +
 			'refreshInterval: 15\n' +
 			'title: Stock Performance List\n' +
 			'description: One year price chart of my watch list\n' +

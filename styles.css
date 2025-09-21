@@ -117,6 +117,17 @@
 	color: #ef4444;
 }
 
+.stock-today-change-cell {
+	font-family: var(--font-monospace);
+	font-weight: 500;
+}
+
+.stock-today-unavailable {
+	color: var(--text-muted);
+	font-style: italic;
+	font-size: 0.9em;
+}
+
 .stock-chart-cell {
 	text-align: center;
 }
@@ -207,6 +218,13 @@
 	color: #ef4444;
 	font-weight: 500;
 	font-family: var(--font-monospace);
+}
+
+.stock-chart-today-change {
+	margin-left: 0.75rem;
+	padding-left: 0.75rem;
+	border-left: 1px solid var(--background-modifier-border);
+	font-size: 0.9em;
 }
 
 .stock-chart-subtitle {

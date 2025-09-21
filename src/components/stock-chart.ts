@@ -80,10 +80,34 @@ export class StockChartComponent extends Component {
 			cls: 'stock-chart-price'
 		});
 
-		const _changeEl = titleRow.createEl('span', {
-			text: `${formatPrice(this.data.change, this.data.currency)} (${formatPercentage(this.data.changePercent)})`,
-			cls: this.data.changePercent >= 0 ? 'stock-chart-change-positive' : 'stock-chart-change-negative'
-		});
+		// Render change information based on whether today's change is shown
+		if (this.shouldShowTodayChange()) {
+			// Show both period change and today's change
+			const days = this.config.days;
+			const dayText = days === 1 ? '1 day' : `${days} days`;
+			
+			const _periodChangeEl = titleRow.createEl('span', {
+				text: `${formatPrice(this.data.change, this.data.currency)} (${formatPercentage(this.data.changePercent)}) ${dayText}`,
+				cls: this.data.changePercent >= 0 ? 'stock-chart-change-positive' : 'stock-chart-change-negative'
+			});
+
+			if (this.data.todayChangePercent !== undefined && this.data.todayChange !== undefined) {
+				const todayChangeEl = titleRow.createEl('span', {
+					text: `${formatPrice(this.data.todayChange, this.data.currency)} (${formatPercentage(this.data.todayChangePercent)}) Today`,
+					cls: this.data.todayChangePercent >= 0 ? 'stock-chart-change-positive' : 'stock-chart-change-negative'
+				});
+				todayChangeEl.addClass('stock-chart-today-change');
+			}
+		} else {
+			// Show only period change with simplified period label
+			const days = this.config.days;
+			const dayText = days === 1 ? '1 day' : `${days} days`;
+			
+			const _changeEl = titleRow.createEl('span', {
+				text: `${formatPrice(this.data.change, this.data.currency)} (${formatPercentage(this.data.changePercent)}) ${dayText}`,
+				cls: this.data.changePercent >= 0 ? 'stock-chart-change-positive' : 'stock-chart-change-negative'
+			});
+		}
 	}
 
 	private renderSubtitle(container: HTMLElement): void {
@@ -264,6 +288,11 @@ export class StockChartComponent extends Component {
 
 	updateData(stockData: StockData): void {
 		this.render(stockData);
+	}
+
+	private shouldShowTodayChange(): boolean {
+		return this.config.showTodayChange === true && this.config.days >= 2 && 
+			this.data?.todayChangePercent !== undefined;
 	}
 
 	destroy(): void {

@@ -18,6 +18,9 @@ export function parseStockListConfig(content: string, settings?: StockTickerSett
 			case 'tickers':
 			case 'symbols':
 			case 'stocks':
+			case 'ticker':
+			case 'symbol':
+			case 'stock':
 				config.tickers = value.split(',').map(t => t.trim()).filter(t => t);
 				break;
 			case 'days':

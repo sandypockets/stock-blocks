@@ -43,31 +43,49 @@ export class StockListComponent extends Component {
 		const table = tableWrapper.createEl('table', { cls: 'stock-list-table' });
 		const thead = table.createEl('thead');
 		const headerRow = thead.createEl('tr');
-		
+
 		this.createSortableHeader(headerRow, 'Symbol', 'symbol');
 		this.createSortableHeader(headerRow, 'Price', 'price');
-		this.createSortableHeader(headerRow, 'Change', 'changePercent');
+		this.createSortableHeader(headerRow, this.getChangeColumnHeader(), 'changePercent');
+		if (this.shouldShowTodayColumn()) {
+			this.createSortableHeader(headerRow, 'Today', 'todayChangePercent');
+		}
 		if (this.config.sparkline !== false) {
 			headerRow.createEl('th', { text: 'Chart' });
 		}
 
 		const tbody = table.createEl('tbody');
-		
+
 		for (const stock of this.data) {
 			const row = tbody.createEl('tr', { cls: 'stock-list-row' });
-			
+
 			const symbolCell = row.createEl('td', { cls: 'stock-symbol-cell' });
 			await this.renderSymbol(symbolCell, stock.symbol);
-			
+
 			const priceCell = row.createEl('td', { cls: 'stock-price-cell' });
 			priceCell.setText(formatPrice(stock.price, stock.currency));
-			
+
 			const changeCell = row.createEl('td', { cls: 'stock-change-cell' });
 			const _changeEl = changeCell.createEl('span', {
 				text: formatPercentage(stock.changePercent),
 				cls: stock.changePercent >= 0 ? 'stock-change-positive' : 'stock-change-negative'
 			});
-			
+
+			if (this.shouldShowTodayColumn()) {
+				const todayChangeCell = row.createEl('td', { cls: 'stock-today-change-cell' });
+				if (stock.todayChangePercent !== undefined) {
+					todayChangeCell.createEl('span', {
+						text: formatPercentage(stock.todayChangePercent),
+						cls: stock.todayChangePercent >= 0 ? 'stock-change-positive' : 'stock-change-negative'
+					});
+				} else {
+					todayChangeCell.createEl('span', {
+						text: 'N/A',
+						cls: 'stock-today-unavailable'
+					});
+				}
+			}
+
 			if (this.config.sparkline !== false) {
 				const chartCell = row.createEl('td', { cls: 'stock-chart-cell' });
 				this.renderSparkline(chartCell, stock);
@@ -76,21 +94,21 @@ export class StockListComponent extends Component {
 
 		if (this.config.showLastUpdate !== false) {
 			const bottomContainer = tableWrapper.createEl('div', { cls: 'stock-list-bottom-container' });
-			
+
 			const leftSection = bottomContainer.createEl('div', { cls: 'stock-list-bottom-left' });
 			const daysText = this.config.days === 1 ? '1 day' : `${this.config.days} days`;
 			leftSection.createEl('span', {
 				text: `Data period: ${daysText}`,
 				cls: 'stock-list-days-info'
 			});
-			
+
 			const rightSection = bottomContainer.createEl('div', { cls: 'stock-list-bottom-right' });
-			
+
 			rightSection.createEl('span', {
 				text: `Last updated: ${this.lastUpdate.toLocaleTimeString()}`,
 				cls: 'stock-list-info'
 			});
-			
+
 			const refreshBtn = rightSection.createEl('button', {
 				text: '↻ Refresh',
 				cls: 'stock-list-refresh-btn stock-list-refresh-btn-bottom'
@@ -139,7 +157,7 @@ export class StockListComponent extends Component {
 		const color = stock.changePercent >= 0 ? '#10b981' : '#ef4444';
 		const sparklineWidth = Math.min(this.config.width, 200); // Cap at 200px for table cells
 		const sparklineHeight = Math.min(this.config.height, 40); // Cap at 40px for table cells
-		
+
 		const { svg, chartId } = createInteractiveSparkline(
 			stock.historicalPrices,
 			sparklineWidth,
@@ -148,7 +166,7 @@ export class StockListComponent extends Component {
 			stock.currency,
 			stock.timestamps
 		);
-		
+
 		this.sparklineChartIds.push(chartId);
 		// Use innerHTML for SVG content - this is safe since we control SVG generation
 		container.innerHTML = svg;
@@ -239,13 +257,13 @@ export class StockListComponent extends Component {
 
 		// Clear tooltip content
 		tooltip.textContent = '';
-		
+
 		// Create price element
 		const priceDiv = document.createElement('div');
 		priceDiv.className = 'tooltip-price';
 		priceDiv.textContent = formattedPrice;
 		tooltip.appendChild(priceDiv);
-		
+
 		// Add date if timestamp is available
 		if (timestamp) {
 			const formattedDate = new Date(timestamp).toLocaleDateString('en-US', {
@@ -288,6 +306,22 @@ export class StockListComponent extends Component {
 		this.render(stockDataArray);
 	}
 
+	private shouldShowTodayColumn(): boolean {
+		return this.config.showTodayChange === true && 
+			this.config.days >= 2 &&
+			this.data.some(stock => stock.todayChangePercent !== undefined);
+	}
+
+	private getChangeColumnHeader(): string {
+		if (this.shouldShowTodayColumn()) {
+			const days = this.config.days;
+			const dayText = days === 1 ? '1 day' : `${days} days`;
+			return dayText;
+		} else {
+			return 'Change';
+		}
+	}
+
 	private async refreshData(): Promise<void> {
 		if (this.refreshDataCallback) {
 			try {
@@ -297,9 +331,9 @@ export class StockListComponent extends Component {
 					refreshBtn.disabled = true;
 					refreshBtn.textContent = '⟳ Loading...';
 				}
-				
+
 				await this.refreshDataCallback();
-				
+
 				if (refreshBtn) {
 					refreshBtn.disabled = false;
 					refreshBtn.textContent = '↻ Refresh';
@@ -320,15 +354,15 @@ export class StockListComponent extends Component {
 			const headerInfo = this.container.createEl('div', { cls: 'stock-list-header-basic' });
 			const headerContainer = headerInfo.createEl('div', { cls: 'stock-list-header' });
 			const leftSection = headerContainer.createEl('div', { cls: 'stock-list-header-left' });
-			
+
 			if (this.config.title) {
 				const titleSection = leftSection.createEl('div', { cls: 'stock-list-title-section' });
 				titleSection.createEl('h4', { text: this.config.title, cls: 'stock-list-title' });
-				
+
 				if (this.config.description) {
-					titleSection.createEl('p', { 
-						text: this.config.description, 
-						cls: 'stock-list-description' 
+					titleSection.createEl('p', {
+						text: this.config.description,
+						cls: 'stock-list-description'
 					});
 				}
 			}
@@ -339,7 +373,7 @@ export class StockListComponent extends Component {
 		const th = row.createEl('th', { text, cls: 'stock-list-sortable-header' });
 		th.onclick = () => this.toggleSort(sortKey as any);
 		th.title = `Click to sort by ${text.toLowerCase()}`;
-		
+
 		if (this.config.sortBy === sortKey) {
 			th.createEl('span', {
 				text: this.config.sortOrder === 'asc' ? ' ↑' : ' ↓',
@@ -348,7 +382,7 @@ export class StockListComponent extends Component {
 		}
 	}
 
-	private toggleSort(column: 'symbol' | 'price' | 'changePercent'): void {
+	private toggleSort(column: 'symbol' | 'price' | 'changePercent' | 'todayChangePercent'): void {
 		if (this.config.sortBy === column) {
 			this.config.sortOrder = this.config.sortOrder === 'asc' ? 'desc' : 'asc';
 		} else {
@@ -356,7 +390,7 @@ export class StockListComponent extends Component {
 			this.config.sortBy = column;
 			this.config.sortOrder = 'asc';
 		}
-		
+
 		this.sortData();
 		this.render(this.data);
 	}
@@ -364,12 +398,12 @@ export class StockListComponent extends Component {
 	private sortData(): void {
 		const sortBy = this.config.sortBy;
 		const sortOrder = this.config.sortOrder || 'asc';
-		
+
 		if (!sortBy) return;
-		
+
 		this.data.sort((a, b) => {
 			let comparison = 0;
-			
+
 			switch (sortBy) {
 				case 'symbol':
 					comparison = a.symbol.localeCompare(b.symbol);
@@ -380,10 +414,16 @@ export class StockListComponent extends Component {
 				case 'changePercent':
 					comparison = a.changePercent - b.changePercent;
 					break;
+				case 'todayChangePercent':
+					// Handle undefined values for today's change
+					const aToday = a.todayChangePercent ?? 0;
+					const bToday = b.todayChangePercent ?? 0;
+					comparison = aToday - bToday;
+					break;
 				default:
 					return 0;
 			}
-			
+
 			return sortOrder === 'asc' ? comparison : -comparison;
 		});
 	}
@@ -409,7 +449,7 @@ export class StockListComponent extends Component {
 	private toggleAutoRefresh(): void {
 		const btn = this.container.querySelector('.stock-list-auto-refresh-btn') as HTMLButtonElement;
 		if (!btn) return;
-		
+
 		if (this.autoRefreshInterval) {
 			this.clearAutoRefresh();
 			btn.textContent = '⏱ Auto';

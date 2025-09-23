@@ -47,8 +47,8 @@ export function parseStockListConfig(content: string, settings?: StockTickerSett
 				config.description = value;
 				break;
 			case 'sortBy':
-				config.sortBy = ['symbol', 'price', 'changePercent'].includes(value) 
-					? value as 'symbol' | 'price' | 'changePercent' 
+				config.sortBy = ['symbol', 'price', 'changePercent', 'todayChangePercent'].includes(value) 
+					? value as 'symbol' | 'price' | 'changePercent' | 'todayChangePercent'
 					: undefined;
 				break;
 			case 'sortOrder':
@@ -58,6 +58,9 @@ export function parseStockListConfig(content: string, settings?: StockTickerSett
 				break;
 			case 'showLastUpdate':
 				config.showLastUpdate = value.toLowerCase() === 'true';
+				break;
+			case 'showTodayChange':
+				config.showTodayChange = value.toLowerCase() === 'true';
 				break;
 			case 'refreshInterval':
 				const refreshInterval = parseInt(value, 10);
@@ -80,6 +83,7 @@ export function parseStockListConfig(content: string, settings?: StockTickerSett
 		sortBy: config.sortBy,
 		sortOrder: config.sortOrder,
 		showLastUpdate: config.showLastUpdate,
+		showTodayChange: config.showTodayChange,
 		refreshInterval: config.refreshInterval,
 		sparkline: config.sparkline ?? (settings?.defaultShowSparklines ?? true), // Use plugin default setting
 	};
@@ -136,6 +140,9 @@ export function parseStockChartConfig(content: string, settings?: StockTickerSet
 			case 'showLastUpdate':
 				config.showLastUpdate = value.toLowerCase() === 'true';
 				break;
+			case 'showTodayChange':
+				config.showTodayChange = value.toLowerCase() === 'true';
+				break;
 			case 'refreshInterval':
 				const refreshInterval = parseInt(value, 10);
 				config.refreshInterval = isNaN(refreshInterval) ? undefined : refreshInterval;
@@ -157,6 +164,7 @@ export function parseStockChartConfig(content: string, settings?: StockTickerSet
 		showAxes: config.showAxes ?? true,
 		linkStyle: config.linkStyle || 'none',
 		showLastUpdate: config.showLastUpdate,
+		showTodayChange: config.showTodayChange,
 		refreshInterval: config.refreshInterval,
 		title: config.title,
 		description: config.description,

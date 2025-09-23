@@ -124,6 +124,20 @@ export class StockDataService {
 		const change = latestPrice - firstPrice;
 		const changePercent = firstPrice !== 0 ? (change / firstPrice) * 100 : 0;
 		
+		// Calculate today's change if we have multiple days of data
+		let todayChange: number | undefined;
+		let todayChangePercent: number | undefined;
+
+		if (days >= 2 && finalData.length >= 2) {
+			const todayPrice = finalData[finalData.length - 1].price;
+			const previousDayPrice = finalData[finalData.length - 2].price;
+			
+			todayChange = Number((todayPrice - previousDayPrice).toFixed(2));
+			todayChangePercent = previousDayPrice !== 0 
+				? Number(((todayChange / previousDayPrice) * 100).toFixed(2)) 
+				: 0;
+		}
+
 		// Try to get currency from the meta data
 		let currency = 'USD'; // Default to USD
 		try {
@@ -140,6 +154,8 @@ export class StockDataService {
 			price: Number(latestPrice.toFixed(2)),
 			change: Number(change.toFixed(2)),
 			changePercent: Number(changePercent.toFixed(2)),
+			todayChange,
+			todayChangePercent,
 			currency,
 			historicalPrices,
 			timestamps: timestampsMs

@@ -3,6 +3,8 @@ export interface StockData {
 	price: number;
 	change: number;
 	changePercent: number;
+	todayChange?: number;
+	todayChangePercent?: number;
 	currency: string;
 	historicalPrices: number[];
 	timestamps: number[];
@@ -15,10 +17,11 @@ export interface StockListBlockConfig {
 	height: number;
 	linkStyle: 'none' | 'wikilink' | 'markdown';
 	showLastUpdate?: boolean;
+	showTodayChange?: boolean;
 	refreshInterval?: number; // in minutes
 	title?: string;
 	description?: string;
-	sortBy?: 'symbol' | 'price' | 'changePercent';
+	sortBy?: 'symbol' | 'price' | 'changePercent' | 'todayChangePercent';
 	sortOrder?: 'asc' | 'desc';
 	sparkline?: boolean;
 }
@@ -31,6 +34,7 @@ export interface SingleStockBlockConfig {
 	showAxes: boolean;
 	linkStyle?: 'none' | 'wikilink' | 'markdown';
 	showLastUpdate?: boolean;
+	showTodayChange?: boolean;
 	refreshInterval?: number; // in minutes
 	title?: string;
 	description?: string;

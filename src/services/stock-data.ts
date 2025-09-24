@@ -247,6 +247,83 @@ export class StockDataService {
 	getCacheSize(): number {
 		return this.cache.size;
 	}
+
+	getCacheMemorySize(): string {
+		const sizes = {
+			mapEntry: 32,
+			object: 24,
+			string: 40,
+			array: 40,
+			number: 8,
+			charBytes: 2
+		};
+		
+		let totalBytes = sizes.array; // Map itself
+		
+		for (const [cacheKey, cacheEntry] of this.cache.entries()) {
+			totalBytes += this.calculateEntrySize(cacheKey, cacheEntry, sizes);
+		}
+		
+		return this.formatBytes(totalBytes);
+	}
+
+	private calculateEntrySize(cacheKey: string, cacheEntry: any, sizes: any): number {
+		let entryBytes = sizes.mapEntry + sizes.object; // Map entry + CacheEntry object
+		
+		entryBytes += this.calculateStringSize(cacheKey, sizes);
+		entryBytes += sizes.number; // timestamp
+		
+		entryBytes += this.calculateStockDataSize(cacheEntry.data, sizes);
+		
+		return entryBytes;
+	}
+
+	private calculateStockDataSize(stockData: any, sizes: any): number {
+		let dataBytes = sizes.object; // StockData object
+		
+		dataBytes += this.calculateStringSize(stockData.symbol, sizes);
+		dataBytes += this.calculateStringSize(stockData.currency, sizes);
+		
+		dataBytes += sizes.number * 3; // price, change, changePercent
+		
+		if (stockData.todayChange !== undefined) dataBytes += sizes.number;
+		if (stockData.todayChangePercent !== undefined) dataBytes += sizes.number;
+		
+		dataBytes += this.calculateArraySize(stockData.historicalPrices, sizes);
+		dataBytes += this.calculateArraySize(stockData.timestamps, sizes);
+		
+		if (stockData.ohlcData) {
+			dataBytes += this.calculateOhlcArraySize(stockData.ohlcData, sizes);
+		}
+		
+		return dataBytes;
+	}
+
+	private calculateStringSize(str: string, sizes: any): number {
+		return str.length * sizes.charBytes + sizes.string;
+	}
+
+	private calculateArraySize(array: any[], sizes: any): number {
+		return sizes.array + array.length * sizes.number;
+	}
+
+	private calculateOhlcArraySize(ohlcArray: any[], sizes: any): number {
+		const ohlcObjectSize = sizes.object + sizes.number * 4; // open, high, low, close
+		return sizes.array + ohlcArray.length * ohlcObjectSize;
+	}
+
+	private formatBytes(bytes: number): string {
+		const kilobyte = 1024;
+		const megabyte = kilobyte * 1024;
+		
+		if (bytes < kilobyte) {
+			return `${bytes} B`;
+		} else if (bytes < megabyte) {
+			return `${(bytes / kilobyte).toFixed(1)} KB`;
+		} else {
+			return `${(bytes / megabyte).toFixed(1)} MB`;
+		}
+	}
 	
 	setCacheDuration(minutes: number): void {
 		this.cacheDuration = minutes * 60 * 1000;

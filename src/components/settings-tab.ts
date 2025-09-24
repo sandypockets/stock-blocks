@@ -70,7 +70,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Clear cache')
-			.setDesc(`Clear all cached stock data (current cache: ${this.plugin.stockDataService.getCacheSize()} entries)`)
+			.setDesc(`Clear all cached stock data (current cache: ${this.plugin.stockDataService.getCacheSize()} entries, ${this.plugin.stockDataService.getCacheMemorySize()})`)
 			.addButton(button => button
 				.setButtonText('Clear Cache')
 				.onClick(async () => {
@@ -107,6 +107,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		this.createCopyableExample(usageContainer,
 			'```stock-block\n' +
 			'stock: AAPL\n' +
+			'useCandles: false\n' +
 			'days: 365\n' +
 			'width: 900\n' +
 			'height: 400\n' +
@@ -120,6 +121,15 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			'```'
 		);
 
+		usageContainer.createEl('h4', { text: 'Candlestick Chart' });
+		usageContainer.createEl('p', { text: 'Display OHLC (Open, High, Low, Close) data as traditional candlestick bars by setting useCandles to true:' });
+		this.createCopyableExample(usageContainer,
+			'```stock-block\n' +
+			'stock: AAPL\n' +
+			'useCandles: true\n' +
+			'```'
+		);
+
 		const calloutEl = usageContainer.createEl('div', { cls: 'stock-callout' });
 		
 		const noteHeader = calloutEl.createEl('div', { cls: 'callout-title stock-callout-title' });
@@ -127,6 +137,32 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 
 		const noteContent = calloutEl.createEl('div', { cls: 'callout-content stock-callout-content' });
 		noteContent.textContent = 'The main `stock` property is flexible. You can also use `symbol`, `ticker`, or even plural forms like `stocks` or `tickers`.';
+
+		const chartTypeCalloutEl = usageContainer.createEl('div', { cls: 'stock-callout' });
+		
+		const chartTypeHeader = chartTypeCalloutEl.createEl('div', { cls: 'callout-title stock-callout-title' });
+		chartTypeHeader.createEl('span', { text: 'Chart Types' });
+
+		const chartTypeContent = chartTypeCalloutEl.createEl('div', { cls: 'callout-content stock-callout-content' });
+		
+		const chartTypeIntro = chartTypeContent.createEl('p');
+		chartTypeIntro.textContent = 'Stock blocks support two chart types:';
+		
+		const chartTypeList = chartTypeContent.createEl('ul');
+		chartTypeList.style.marginTop = '10px';
+		chartTypeList.style.listStyleType = 'none';
+		chartTypeList.style.paddingLeft = '0';
+		
+		const lineItem = chartTypeList.createEl('li');
+		lineItem.style.marginBottom = '5px';
+		const lineStrong = lineItem.createEl('strong');
+		lineStrong.textContent = 'Line Chart (default):';
+		lineItem.appendText(' Shows price movement as a connected line');
+		
+		const candleItem = chartTypeList.createEl('li');
+		const candleStrong = candleItem.createEl('strong');
+		candleStrong.textContent = 'Candlestick Chart:';
+		candleItem.appendText(' Shows OHLC data as traditional candlestick bars (set useCandles: true)');
 
 		usageContainer.createEl('h3', { text: 'Stock Block List' });
 		this.createCopyableExample(usageContainer,

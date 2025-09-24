@@ -2,16 +2,10 @@ import { StockData, CacheEntry, OHLCData } from '../types';
 import { requestUrl } from 'obsidian';
 import { calculateOptimalDateRange } from '../utils/date-utils';
 
-/**
- * Checks if a price value is valid (not null and not NaN)
- */
 function isValidPrice(price: any): price is number {
 	return price != null && !isNaN(price);
 }
 
-/**
- * Validates and creates OHLC data if all values are valid
- */
 function createOHLCData(open: any, high: any, low: any, close: any): OHLCData | null {
 	if (!isValidPrice(open) || !isValidPrice(high) || !isValidPrice(low) || !isValidPrice(close)) {
 		return null;
@@ -65,10 +59,7 @@ export class StockDataService {
 	
 	private async fetchRealStockData(symbol: string, days: number, includeOHLC: boolean = false): Promise<StockData> {
 		const cleanSymbol = symbol.toUpperCase().trim();
-		
-		// Calculate optimal date range using business day logic
 		const dateRange = calculateOptimalDateRange(days, this.useBusinessDays);
-		
 		const url = `https://query1.finance.yahoo.com/v8/finance/chart/${cleanSymbol}?period1=${dateRange.startDate}&period2=${dateRange.endDate}&interval=1d`;
 		
 		const response = await requestUrl({
@@ -95,7 +86,6 @@ export class StockDataService {
 		const highPrices = quotes.high;
 		const lowPrices = quotes.low;
 		
-		// Process data efficiently with single pass
 		const validData: { timestamp: number; price: number; ohlc?: OHLCData }[] = [];
 		
 		for (let i = 0; i < timestamps.length; i++) {
@@ -109,7 +99,6 @@ export class StockDataService {
 				price: Number(closePrices[i])
 			};
 			
-			// Add OHLC data if requested and all values are valid
 			if (includeOHLC) {
 				const ohlc = createOHLCData(
 					openPrices?.[i],
@@ -130,7 +119,6 @@ export class StockDataService {
 			throw new Error(`No valid price data found for ${cleanSymbol}`);
 		}
 		
-		// Sort by timestamp to ensure chronological order
 		validData.sort((a, b) => a.timestamp - b.timestamp);
 		
 		// For small datasets (like 1-day requests), be more selective about deduplication
@@ -163,7 +151,6 @@ export class StockDataService {
 		const historicalPrices = finalData.map(d => d.price);
 		const timestampsMs = finalData.map(d => d.timestamp);
 		
-		// Extract OHLC data efficiently if requested
 		let ohlcData: OHLCData[] | undefined;
 		if (includeOHLC) {
 			ohlcData = [];

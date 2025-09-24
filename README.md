@@ -72,8 +72,15 @@ Displays a table of multiple tickers with:
 Displays a larger chart for one symbol with:
  - Header: symbol, price with currency, % change
  - Subtitle: range (min–max) over selected period with currency
- - SVG line chart with hover tooltip
+ - SVG line chart or candlestick chart with hover tooltip
  - Optional axes showing price values and dates
+
+### Chart Types
+The plugin supports two chart types for single stock displays:
+- **Line Chart** (default): Shows price movement as a connected line
+- **Candlestick Chart**: Shows OHLC (Open, High, Low, Close) data as traditional candlestick bars
+
+To enable candlestick charts, add `useCandles: true` to your stock block configuration.
 
 ### Smart Business Day Handling
 When enabled in settings (enabled by default), the `days` parameter represents trading days rather than calendar days. The plugin ensures sufficient data points for meaningful charts, even for very short periods (1-2 days)
@@ -112,9 +119,21 @@ stocks: AAPL
 ```
 ````
 
+#### Candlestick Chart
+To display OHLC (Open, High, Low, Close) data as a candlestick chart, add `useCandles: true`:
+
+````markdown
+```stock-block
+stock: AAPL
+useCandles: true
+```
+````
+
+#### Full Configuration
 If you need more customization, you can use additional properties:
 
 - `symbol`, `symbols`, `stock`, `stocks`, `ticker`, or `tickers`: Stock symbol to display (any of these property names work)
+- `useCandles`: Display as candlestick chart instead of line chart (default: false)
 - `days`: Number of days of historical data (default: 30, interpreted as business days if enabled in settings)
 - `width`: Width of chart in pixels (default: 500)
 - `height`: Height of chart in pixels (default: 300)

@@ -230,7 +230,7 @@ export function createCandlestickChart(
 	}
 
 	const chartData = JSON.stringify({
-		candles: candles, // Use the candles array directly - no need to map again
+		candles: candles,
 		padding,
 		chartWidth,
 		chartHeight,

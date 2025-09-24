@@ -104,7 +104,7 @@ export function createCandlestickChart(
 	showAxes: boolean = false,
 	currency: string = 'USD'
 ): { svg: string; chartId: string } {
-	const chartId = `candles-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+	const chartId = `candles-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 	
 	if (ohlcData.length === 0) {
 		return {

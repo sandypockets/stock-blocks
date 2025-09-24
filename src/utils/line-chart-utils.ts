@@ -96,7 +96,7 @@ export function createInteractiveChart(
 	showAxes: boolean = false,
 	currency: string = 'USD'
 ): { svg: string; chartId: string } {
-	const chartId = `chart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+	const chartId = `chart-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 	
 	if (prices.length === 0) {
 		return {

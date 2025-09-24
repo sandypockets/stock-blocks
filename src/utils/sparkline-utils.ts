@@ -50,7 +50,7 @@ export function createInteractiveSparkline(
 	currency: string = 'USD',
 	timestamps?: number[]
 ): { svg: string; chartId: string } {
-	const chartId = `sparkline-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+	const chartId = `candles-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 	
 	if (prices.length === 0) {
 		return {

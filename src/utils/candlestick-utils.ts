@@ -201,7 +201,7 @@ export function createCandlestickChart(
 				  stroke="${color}" stroke-width="1" class="candle-wick" />
 			
 			<rect x="${bodyX}" y="${bodyTop}" width="${candleWidth}" height="${Math.max(1, bodyHeight)}" 
-				  fill="${candle.isGreen ? color : '#ffffff'}" 
+				  fill="${color}" 
 				  stroke="${color}" stroke-width="1" 
 				  class="candle-body" data-candle-index="${candle.index}" />
 		`;

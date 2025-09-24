@@ -17,6 +17,7 @@ export class StockChartComponent extends Component {
 	private autoRefreshInterval?: number;
 	private lastUpdate: Date = new Date();
 	public refreshDataCallback?: () => Promise<void>;
+	private eventListeners: { element: Element; event: string; handler: EventListener }[] = [];
 
 	constructor(container: HTMLElement, config: SingleStockBlockConfig, app?: App) {
 		super();
@@ -30,6 +31,12 @@ export class StockChartComponent extends Component {
 		this.data = stockData;
 		this.container.empty();
 		this.container.addClass('stock-chart-container');
+
+		// Clear any existing event listeners when re-rendering
+		for (const { element, event, handler } of this.eventListeners) {
+			element.removeEventListener(event, handler);
+		}
+		this.eventListeners = [];
 
 		if (!this.data) {
 			this.container.createEl('div', {
@@ -163,14 +170,14 @@ export class StockChartComponent extends Component {
 				text: '↻ Refresh',
 				cls: 'stock-list-refresh-btn stock-list-refresh-btn-bottom'
 			});
-			refreshBtn.onclick = () => this.refreshData();
+			this.addEventListenerTracked(refreshBtn, 'click', () => this.refreshData());
 
 			if (this.config.refreshInterval && this.config.refreshInterval > 0) {
 				const autoRefreshBtn = rightSection.createEl('button', {
 					text: '⏱ Auto',
 					cls: 'stock-list-auto-refresh-btn stock-list-auto-refresh-btn-bottom'
 				});
-				autoRefreshBtn.onclick = () => this.toggleAutoRefresh();
+				this.addEventListenerTracked(autoRefreshBtn, 'click', () => this.toggleAutoRefresh());
 			}
 		}
 
@@ -234,12 +241,12 @@ export class StockChartComponent extends Component {
 			return;
 		}
 
-		overlay.addEventListener('mouseenter', () => {
+		this.addEventListenerTracked(overlay, 'mouseenter', () => {
 			hoverLine.classList.add('visible');
 			hoverDot.classList.add('visible');
 		});
 
-		overlay.addEventListener('mouseleave', () => {
+		this.addEventListenerTracked(overlay, 'mouseleave', () => {
 			hoverLine.classList.remove('visible');
 			hoverDot.classList.remove('visible');
 			if (this.tooltip) {
@@ -247,7 +254,7 @@ export class StockChartComponent extends Component {
 			}
 		});
 
-		overlay.addEventListener('mousemove', (event) => {
+		this.addEventListenerTracked(overlay, 'mousemove', (event: MouseEvent) => {
 			const rect = svg.getBoundingClientRect();
 			
 			// Calculate mouse position relative to SVG coordinates
@@ -314,7 +321,6 @@ export class StockChartComponent extends Component {
 					hoverDot.setAttribute('cx', clampedMouseX.toString());
 					hoverDot.setAttribute('cy', y.toString());
 
-					// Update tooltip using screen coordinates
 					updateTooltip(
 						this.tooltip,
 						event.clientX,
@@ -373,7 +379,6 @@ export class StockChartComponent extends Component {
 					refreshBtn.textContent = '↻ Refresh';
 				}
 			} catch (error) {
-				// Error refreshing data
 				const refreshBtn = this.container.querySelector('.stock-list-refresh-btn') as HTMLButtonElement;
 				if (refreshBtn) {
 					refreshBtn.disabled = false;
@@ -440,10 +445,24 @@ export class StockChartComponent extends Component {
 		}
 	}
 
+	private addEventListenerTracked(element: Element, event: string, handler: EventListener): void {
+		element.addEventListener(event, handler);
+		this.eventListeners.push({ element, event, handler });
+	}
+
 	onunload(): void {
 		if (this.autoRefreshInterval) {
 			clearInterval(this.autoRefreshInterval);
 			this.autoRefreshInterval = undefined;
+		}
+		
+		for (const { element, event, handler } of this.eventListeners) {
+			element.removeEventListener(event, handler);
+		}
+		this.eventListeners = [];
+		
+		if (this.tooltip && this.tooltip.parentNode) {
+			this.tooltip.parentNode.removeChild(this.tooltip);
 		}
 	}
 }

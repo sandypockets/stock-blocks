@@ -308,7 +308,17 @@
 	color: var(--text-muted);
 }
 
-/* Interactive Chart Elements */
+.tooltip-ohlc {
+	margin-top: 4px;
+}
+
+.ohlc-row {
+	font-size: 0.7rem;
+	color: var(--text-muted);
+	margin: 1px 0;
+	font-family: var(--font-monospace);
+}
+
 .interactive-chart .hover-line {
 	transition: opacity 0.2s ease;
 	opacity: 0;
@@ -316,6 +326,15 @@
 
 .interactive-chart .hover-line.visible {
 	opacity: 1;
+}
+
+.candlestick-chart .candle-body:hover {
+	stroke-width: 2;
+	opacity: 0.8;
+}
+
+.candlestick-chart .candle-wick {
+	pointer-events: none;
 }
 
 .interactive-chart .hover-dot {
@@ -331,7 +350,6 @@
 	cursor: crosshair;
 }
 
-/* Interactive Sparkline Elements */
 .interactive-sparkline .hover-dot {
 	transition: opacity 0.2s ease;
 	opacity: 0;
@@ -485,7 +503,6 @@ p.stock-list-description {
 	font-weight: bold;
 }
 
-/* Loading States */
 .stock-loading {
 	display: flex;
 	align-items: center;
@@ -667,7 +684,6 @@ p.stock-list-description {
 	transform: translateY(0);
 }
 
-/* Settings tab specific styles */
 .stock-blocks-usage-header {
 	font-size: 1.5rem !important;
 	font-weight: bold !important;

@@ -85,7 +85,7 @@ export function parseStockListConfig(content: string, settings?: StockTickerSett
 		showLastUpdate: config.showLastUpdate,
 		showTodayChange: config.showTodayChange,
 		refreshInterval: config.refreshInterval,
-		sparkline: config.sparkline ?? (settings?.defaultShowSparklines ?? true), // Use plugin default setting
+		sparkline: config.sparkline ?? (settings?.defaultShowSparklines ?? true),
 	};
 }
 
@@ -153,6 +153,9 @@ export function parseStockChartConfig(content: string, settings?: StockTickerSet
 			case 'description':
 				config.description = value;
 				break;
+			case 'useCandles':
+				config.useCandles = value.toLowerCase() === 'true';
+				break;
 		}
 	}
 	
@@ -168,5 +171,6 @@ export function parseStockChartConfig(content: string, settings?: StockTickerSet
 		refreshInterval: config.refreshInterval,
 		title: config.title,
 		description: config.description,
+		useCandles: config.useCandles ?? false,
 	};
 }

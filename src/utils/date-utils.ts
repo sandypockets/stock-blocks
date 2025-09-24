@@ -1,16 +1,9 @@
-/**
- * Utility functions for handling business days and market trading schedules
- */
-
 export interface DateRange {
 	startDate: number; // Unix timestamp in seconds
 	endDate: number; // Unix timestamp in seconds
 	actualDays: number; // Number of calendar days covered
 }
 
-/**
- * Check if a given date is a weekend (Saturday or Sunday)
- */
 export function isWeekend(date: Date): boolean {
 	const day = date.getDay();
 	return day === 0 || day === 6; // Sunday = 0, Saturday = 6
@@ -18,7 +11,7 @@ export function isWeekend(date: Date): boolean {
 
 /**
  * Check if a given date is likely a market holiday (basic US holidays)
- * This is a simplified version - in production you'd want a more comprehensive holiday calendar
+ * This is a simplified version, and may not be exact for all markets.
  */
 export function isLikelyMarketHoliday(date: Date): boolean {
 	const month = date.getMonth(); // 0-based
@@ -60,19 +53,14 @@ export function isLikelyMarketHoliday(date: Date): boolean {
 	return false;
 }
 
-/**
- * Check if a given date is a trading day (not weekend or holiday)
- */
+
 export function isTradingDay(date: Date): boolean {
 	return !isWeekend(date) && !isLikelyMarketHoliday(date);
 }
 
-/**
- * Get the most recent trading day from a given date
- */
+
 export function getMostRecentTradingDay(fromDate: Date = new Date()): Date {
 	const date = new Date(fromDate);
-	
 	// Go back day by day until we find a trading day
 	while (!isTradingDay(date)) {
 		date.setDate(date.getDate() - 1);
@@ -147,9 +135,6 @@ export function calculateOptimalDateRange(
 	};
 }
 
-/**
- * Get a human-readable description of the time period
- */
 export function getTimeRangeDescription(
 	requestedDays: number,
 	useBusinessDays: boolean,

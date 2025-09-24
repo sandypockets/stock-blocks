@@ -11,7 +11,7 @@ export function createStockDataFetcher(stockDataService: StockDataService) {
 		},
 
 		async fetchChartData(config: SingleStockBlockConfig) {
-			return stockDataService.getStockData(config.symbol, config.days);
+			return stockDataService.getStockData(config.symbol, config.days, config.useCandles);
 		},
 
 		createListRefreshFetcher(config: StockListBlockConfig) {
@@ -27,7 +27,7 @@ export function createStockDataFetcher(stockDataService: StockDataService) {
 		createChartRefreshFetcher(config: SingleStockBlockConfig) {
 			return async () => {
 				stockDataService.clearCache();
-				return stockDataService.getStockData(config.symbol, config.days);
+				return stockDataService.getStockData(config.symbol, config.days, config.useCandles);
 			};
 		}
 	};

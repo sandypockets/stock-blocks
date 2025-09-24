@@ -1,6 +1,10 @@
 import { SingleStockBlockConfig, StockData } from '../types';
-import { createInteractiveChart, formatPrice, formatPercentage, interpolatePrice, createTooltip, updateTooltip, hideTooltip } from '../utils/chart-utils';
+import { formatPrice, formatPercentage } from '../utils/formatters';
+import { createTooltip, updateTooltip, updateCandlestickTooltip, hideTooltip } from '../utils/tooltip-utils';
+import { createInteractiveChart, interpolatePrice } from '../utils/line-chart-utils';
+import { createCandlestickChart, interpolateCandlestickPrice } from '../utils/candlestick-utils';
 import { getTimeRangeDescription, calculateOptimalDateRange } from '../utils/date-utils';
+import { calculatePriceRange } from '../utils/math-utils';
 import { MarkdownRenderer, Component, App } from 'obsidian';
 
 export class StockChartComponent extends Component {
@@ -114,8 +118,7 @@ export class StockChartComponent extends Component {
 		if (!this.data || this.data.historicalPrices.length === 0) return;
 
 		const prices = this.data.historicalPrices;
-		const min = Math.min(...prices);
-		const max = Math.max(...prices);
+		const { min, max } = calculatePriceRange(prices);
 
 		const startDate = new Date(this.data.timestamps[0]).toLocaleDateString('en-US', {
 			month: 'short',
@@ -177,14 +180,34 @@ export class StockChartComponent extends Component {
 	private renderChart(container: HTMLElement): void {
 		if (!this.data || this.data.historicalPrices.length === 0) return;
 
-		const { svg, chartId } = createInteractiveChart(
-			this.data.historicalPrices,
-			this.data.timestamps,
-			this.config.width,
-			this.config.height,
-			this.config.showAxes,
-			this.data.currency
-		);
+		let svg: string;
+		let chartId: string;
+
+		if (this.config.useCandles && this.data.ohlcData && this.data.ohlcData.length > 0) {
+			// Render candlestick chart
+			const result = createCandlestickChart(
+				this.data.ohlcData,
+				this.data.timestamps,
+				this.config.width,
+				this.config.height,
+				this.config.showAxes,
+				this.data.currency
+			);
+			svg = result.svg;
+			chartId = result.chartId;
+		} else {
+			// Render line chart (default)
+			const result = createInteractiveChart(
+				this.data.historicalPrices,
+				this.data.timestamps,
+				this.config.width,
+				this.config.height,
+				this.config.showAxes,
+				this.data.currency
+			);
+			svg = result.svg;
+			chartId = result.chartId;
+		}
 
 		this.currentChartId = chartId;
 		// Use innerHTML for SVG content - this is safe since we control SVG generation
@@ -239,36 +262,68 @@ export class StockChartComponent extends Component {
 				const scaleX = svgRect.width / rect.width;
 				const scaleY = svgRect.height / rect.height;
 				
-			mouseX = (event.clientX - rect.left) * scaleX;
-			_mouseY = (event.clientY - rect.top) * scaleY;
-		} catch (e) {
-			// Fallback to simple coordinate calculation
-			mouseX = event.clientX - rect.left;
-			_mouseY = event.clientY - rect.top;
-		}			// Clamp mouseX to chart bounds
-			const clampedMouseX = Math.max(chartData.padding, Math.min(chartData.padding + chartData.chartWidth, mouseX));
+				mouseX = (event.clientX - rect.left) * scaleX;
+				_mouseY = (event.clientY - rect.top) * scaleY;
+			} catch (e) {
+				// Fallback to simple coordinate calculation
+				mouseX = event.clientX - rect.left;
+				_mouseY = event.clientY - rect.top;
+			}
+
+			// Clamp mouseX to chart bounds
+			const rightBound = chartData.padding + chartData.chartWidth;
+			const clampedMouseX = Math.max(chartData.padding, Math.min(rightBound, mouseX));
 
 			// Update hover line position
 			hoverLine.setAttribute('x1', clampedMouseX.toString());
 			hoverLine.setAttribute('x2', clampedMouseX.toString());
 
-			// Interpolate price at mouse position
-			const interpolated = interpolatePrice(clampedMouseX, chartData);
-			if (interpolated && this.tooltip) {
-				// Calculate Y position for the dot on the line
-				const { y } = this.calculateYPosition(interpolated.price, chartData);
-				hoverDot.setAttribute('cx', clampedMouseX.toString());
-				hoverDot.setAttribute('cy', y.toString());
+			// Check if this is a candlestick chart
+			const isCandlestickChart = svg.classList.contains('candlestick-chart');
 
-				// Update tooltip using screen coordinates
-				updateTooltip(
-					this.tooltip,
-					event.clientX,
-					event.clientY,
-					interpolated.price,
-					interpolated.timestamp,
-					chartData.currency
-				);
+			if (isCandlestickChart && chartData.candles) {
+				// Handle candlestick chart interactions
+				const interpolated = interpolateCandlestickPrice(clampedMouseX, chartData);
+				if (interpolated && this.tooltip) {
+					// Calculate Y position for the dot (use close price)
+					const { y } = this.calculateYPosition(interpolated.close, chartData);
+					hoverDot.setAttribute('cx', clampedMouseX.toString());
+					hoverDot.setAttribute('cy', y.toString());
+
+					// Update tooltip with OHLC data using screen coordinates
+					updateCandlestickTooltip(
+						this.tooltip,
+						event.clientX,
+						event.clientY,
+						{
+							open: interpolated.open,
+							high: interpolated.high,
+							low: interpolated.low,
+							close: interpolated.close
+						},
+						interpolated.timestamp,
+						chartData.currency
+					);
+				}
+			} else {
+				// Handle line chart interactions (original logic)
+				const interpolated = interpolatePrice(clampedMouseX, chartData);
+				if (interpolated && this.tooltip) {
+					// Calculate Y position for the dot on the line
+					const { y } = this.calculateYPosition(interpolated.price, chartData);
+					hoverDot.setAttribute('cx', clampedMouseX.toString());
+					hoverDot.setAttribute('cy', y.toString());
+
+					// Update tooltip using screen coordinates
+					updateTooltip(
+						this.tooltip,
+						event.clientX,
+						event.clientY,
+						interpolated.price,
+						interpolated.timestamp,
+						chartData.currency
+					);
+				}
 			}
 		});
 	}

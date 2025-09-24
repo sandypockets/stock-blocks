@@ -63,9 +63,16 @@ try {
   // Update manifest.json
   const manifest = JSON.parse(readFileSync('manifest.json', 'utf8'));
   const currentManifestVersion = manifest.version;
+  const { minAppVersion } = manifest;
   manifest.version = newVersion;
   writeFileSync('manifest.json', JSON.stringify(manifest, null, '\t') + '\n');
   console.log(`📄 Updated manifest.json: ${currentManifestVersion} -> ${newVersion}`);
+  
+  // Update versions.json
+  const versions = JSON.parse(readFileSync('versions.json', 'utf8'));
+  versions[newVersion] = minAppVersion;
+  writeFileSync('versions.json', JSON.stringify(versions, null, '\t') + '\n');
+  console.log(`🗂️  Updated versions.json: added ${newVersion} -> ${minAppVersion}`);
   
   console.log('\n✅ Version update completed successfully!');
   console.log('\nNext steps:');

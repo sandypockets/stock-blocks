@@ -15,7 +15,7 @@ export interface StockData {
 	currency: string;
 	historicalPrices: number[];
 	timestamps: number[];
-	ohlcData?: OHLCData[]; // OHLC data for candlestick charts
+	ohlcData?: OHLCData[];
 }
 
 export interface StockListBlockConfig {
@@ -56,7 +56,7 @@ export interface StockTickerSettings {
 	defaultWidth: number;
 	defaultHeight: number;
 	useBusinessDays: boolean; // whether to interpret 'days' as business days
-	minDataPoints: number; // minimum data points for chart rendering
+	minDataPoints: number;
 	defaultShowSparklines: boolean;
 }
 

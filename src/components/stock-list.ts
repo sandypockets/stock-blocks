@@ -1,5 +1,7 @@
 import { StockListBlockConfig, StockData } from '../types';
-import { createInteractiveSparkline, formatPrice, formatPercentage, createTooltip, hideTooltip } from '../utils/chart-utils';
+import { formatPrice, formatPercentage } from '../utils/formatters';
+import { createTooltip, hideTooltip } from '../utils/tooltip-utils';
+import { createInteractiveSparkline } from '../utils/sparkline-utils';
 import { MarkdownRenderer, Component, App } from 'obsidian';
 
 export class StockListComponent extends Component {

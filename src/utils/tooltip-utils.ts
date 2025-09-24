@@ -91,12 +91,27 @@ export function updateCandlestickTooltip(
 	
 	const ohlcDiv = document.createElement('div');
 	ohlcDiv.className = 'tooltip-ohlc';
-	ohlcDiv.innerHTML = `
-		<div class="ohlc-row">O: ${formatPrice(ohlc.open, currency)}</div>
-		<div class="ohlc-row">H: ${formatPrice(ohlc.high, currency)}</div>
-		<div class="ohlc-row">L: ${formatPrice(ohlc.low, currency)}</div>
-		<div class="ohlc-row">C: ${formatPrice(ohlc.close, currency)}</div>
-	`;
+	
+	const openRow = document.createElement('div');
+	openRow.className = 'ohlc-row';
+	openRow.textContent = `O: ${formatPrice(ohlc.open, currency)}`;
+	ohlcDiv.appendChild(openRow);
+	
+	const highRow = document.createElement('div');
+	highRow.className = 'ohlc-row';
+	highRow.textContent = `H: ${formatPrice(ohlc.high, currency)}`;
+	ohlcDiv.appendChild(highRow);
+	
+	const lowRow = document.createElement('div');
+	lowRow.className = 'ohlc-row';
+	lowRow.textContent = `L: ${formatPrice(ohlc.low, currency)}`;
+	ohlcDiv.appendChild(lowRow);
+	
+	const closeRow = document.createElement('div');
+	closeRow.className = 'ohlc-row';
+	closeRow.textContent = `C: ${formatPrice(ohlc.close, currency)}`;
+	ohlcDiv.appendChild(closeRow);
+	
 	tooltip.appendChild(ohlcDiv);
 
 	positionTooltip(tooltip, x, y);

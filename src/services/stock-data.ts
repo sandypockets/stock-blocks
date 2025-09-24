@@ -1,6 +1,29 @@
-import { StockData, CacheEntry } from '../types';
+import { StockData, CacheEntry, OHLCData } from '../types';
 import { requestUrl } from 'obsidian';
 import { calculateOptimalDateRange } from '../utils/date-utils';
+
+/**
+ * Checks if a price value is valid (not null and not NaN)
+ */
+function isValidPrice(price: any): price is number {
+	return price != null && !isNaN(price);
+}
+
+/**
+ * Validates and creates OHLC data if all values are valid
+ */
+function createOHLCData(open: any, high: any, low: any, close: any): OHLCData | null {
+	if (!isValidPrice(open) || !isValidPrice(high) || !isValidPrice(low) || !isValidPrice(close)) {
+		return null;
+	}
+	
+	return {
+		open: Number(open),
+		high: Number(high),
+		low: Number(low),
+		close: Number(close)
+	};
+}
 
 export class StockDataService {
 	private cache = new Map<string, CacheEntry>();
@@ -18,8 +41,8 @@ export class StockDataService {
 		this.minDataPoints = minDataPoints;
 	}
 	
-	async getStockData(symbol: string, days: number = 30): Promise<StockData> {
-		const cacheKey = `${symbol}-${days}-${this.useBusinessDays}`;
+	async getStockData(symbol: string, days: number = 30, includeOHLC: boolean = false): Promise<StockData> {
+		const cacheKey = `${symbol}-${days}-${this.useBusinessDays}-${includeOHLC}`;
 		const cached = this.cache.get(cacheKey);
 		
 		if (cached && Date.now() - cached.timestamp < this.cacheDuration) {
@@ -27,7 +50,7 @@ export class StockDataService {
 		}
 		
 		try {
-			const data = await this.fetchRealStockData(symbol, days);
+			const data = await this.fetchRealStockData(symbol, days, includeOHLC);
 			this.cache.set(cacheKey, {
 				data,
 				timestamp: Date.now()
@@ -40,7 +63,7 @@ export class StockDataService {
 		}
 	}
 	
-	private async fetchRealStockData(symbol: string, days: number): Promise<StockData> {
+	private async fetchRealStockData(symbol: string, days: number, includeOHLC: boolean = false): Promise<StockData> {
 		const cleanSymbol = symbol.toUpperCase().trim();
 		
 		// Calculate optimal date range using business day logic
@@ -68,16 +91,39 @@ export class StockDataService {
 		const timestamps = result.timestamp;
 		const quotes = result.indicators.quote[0];
 		const closePrices = quotes.close;
+		const openPrices = quotes.open;
+		const highPrices = quotes.high;
+		const lowPrices = quotes.low;
 		
-		// Filter out null values and ensure we have valid data
-		const validData: { timestamp: number; price: number }[] = [];
+		// Process data efficiently with single pass
+		const validData: { timestamp: number; price: number; ohlc?: OHLCData }[] = [];
+		
 		for (let i = 0; i < timestamps.length; i++) {
-			if (closePrices[i] != null && !isNaN(closePrices[i])) {
-				validData.push({
-					timestamp: timestamps[i] * 1000, // Convert to milliseconds
-					price: Number(closePrices[i])
-				});
+			// Skip if close price is invalid (primary requirement)
+			if (!isValidPrice(closePrices[i])) {
+				continue;
 			}
+			
+			const dataPoint = {
+				timestamp: timestamps[i] * 1000, // Convert to milliseconds
+				price: Number(closePrices[i])
+			};
+			
+			// Add OHLC data if requested and all values are valid
+			if (includeOHLC) {
+				const ohlc = createOHLCData(
+					openPrices?.[i],
+					highPrices?.[i], 
+					lowPrices?.[i],
+					closePrices[i]
+				);
+				
+				if (ohlc) {
+					(dataPoint as any).ohlc = ohlc;
+				}
+			}
+			
+			validData.push(dataPoint);
 		}
 		
 		if (validData.length === 0) {
@@ -93,7 +139,7 @@ export class StockDataService {
 		// Only deduplicate if we have many data points, to avoid losing necessary chart data
 		if (validData.length > days * 2) {
 			// Deduplicate data points from the same calendar date (keep the latest price for each day)
-			const dailyData = new Map<string, { timestamp: number; price: number }>();
+			const dailyData = new Map<string, { timestamp: number; price: number; ohlc?: OHLCData }>();
 			for (const dataPoint of validData) {
 				const date = new Date(dataPoint.timestamp);
 				const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -116,6 +162,21 @@ export class StockDataService {
 		
 		const historicalPrices = finalData.map(d => d.price);
 		const timestampsMs = finalData.map(d => d.timestamp);
+		
+		// Extract OHLC data efficiently if requested
+		let ohlcData: OHLCData[] | undefined;
+		if (includeOHLC) {
+			ohlcData = [];
+			for (const dataPoint of finalData) {
+				if (dataPoint.ohlc) {
+					ohlcData.push(dataPoint.ohlc);
+				}
+			}
+			// Only keep the array if we have OHLC data
+			if (ohlcData.length === 0) {
+				ohlcData = undefined;
+			}
+		}
 		
 		const latestPrice = historicalPrices[historicalPrices.length - 1];
 		// Calculate change over the entire period (first day vs last day)
@@ -149,7 +210,7 @@ export class StockDataService {
 			currency = this.detectCurrencyFromSymbol(cleanSymbol);
 		}
 		
-		return {
+		const stockData: StockData = {
 			symbol: cleanSymbol,
 			price: Number(latestPrice.toFixed(2)),
 			change: Number(change.toFixed(2)),
@@ -160,6 +221,13 @@ export class StockDataService {
 			historicalPrices,
 			timestamps: timestampsMs
 		};
+		
+		// Add OHLC data if it was requested and available
+		if (includeOHLC && ohlcData && ohlcData.length > 0) {
+			stockData.ohlcData = ohlcData;
+		}
+		
+		return stockData;
 	}
 	
 	private detectCurrencyFromSymbol(symbol: string): string {

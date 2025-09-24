@@ -1,0 +1,26 @@
+export const CANDLESTICK_CONFIG = {
+	MAX_WIDTHS: {
+		VERY_FEW: 120,
+		FEW: 80,
+		MODERATE: 50,
+		MANY: 30,
+		VERY_MANY: 15
+	},
+	
+	GAP_PERCENTAGES: {
+		VERY_FEW: 0.05,
+		FEW: 0.08,
+		MODERATE: 0.7,
+		MANY: 0.6,
+		VERY_MANY: 1.2
+	},
+	
+	THRESHOLDS: {
+		VERY_FEW: 3,
+		FEW: 7,
+		MODERATE: 15,
+		MANY: 30
+	},
+	
+	MIN_WIDTH: 2
+};

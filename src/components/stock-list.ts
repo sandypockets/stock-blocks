@@ -1,5 +1,7 @@
 import { StockListBlockConfig, StockData } from '../types';
-import { createInteractiveSparkline, formatPrice, formatPercentage, createTooltip, hideTooltip } from '../utils/chart-utils';
+import { formatPrice, formatPercentage } from '../utils/formatters';
+import { createTooltip, hideTooltip } from '../utils/tooltip-utils';
+import { createInteractiveSparkline } from '../utils/sparkline-utils';
 import { MarkdownRenderer, Component, App } from 'obsidian';
 
 export class StockListComponent extends Component {
@@ -12,6 +14,7 @@ export class StockListComponent extends Component {
 	private tooltip: HTMLElement | null = null;
 	private sparklineChartIds: string[] = [];
 	public refreshDataCallback?: () => Promise<void>;
+	private eventListeners: { element: Element; event: string; handler: EventListener }[] = [];
 
 	constructor(container: HTMLElement, config: StockListBlockConfig, app: App) {
 		super();
@@ -25,6 +28,13 @@ export class StockListComponent extends Component {
 		this.data = stockDataArray;
 		this.lastUpdate = new Date();
 		this.sparklineChartIds = [];
+		
+		// Clear any existing event listeners when re-rendering
+		for (const { element, event, handler } of this.eventListeners) {
+			element.removeEventListener(event, handler);
+		}
+		this.eventListeners = [];
+		
 		this.container.empty();
 		this.container.addClass('stock-list-container');
 		this.renderHeader();
@@ -113,14 +123,14 @@ export class StockListComponent extends Component {
 				text: '↻ Refresh',
 				cls: 'stock-list-refresh-btn stock-list-refresh-btn-bottom'
 			});
-			refreshBtn.onclick = () => this.refreshData();
+			this.addEventListenerTracked(refreshBtn, 'click', () => this.refreshData());
 
 			if (this.config.refreshInterval && this.config.refreshInterval > 0) {
 				const autoRefreshBtn = rightSection.createEl('button', {
 					text: '⏱ Auto',
 					cls: 'stock-list-auto-refresh-btn stock-list-auto-refresh-btn-bottom'
 				});
-				autoRefreshBtn.onclick = () => this.toggleAutoRefresh();
+				this.addEventListenerTracked(autoRefreshBtn, 'click', () => this.toggleAutoRefresh());
 			}
 		}
 		this.setupAutoRefresh();
@@ -191,18 +201,18 @@ export class StockListComponent extends Component {
 			return;
 		}
 
-		overlay.addEventListener('mouseenter', () => {
+		this.addEventListenerTracked(overlay, 'mouseenter', () => {
 			hoverDot.classList.add('visible');
 		});
 
-		overlay.addEventListener('mouseleave', () => {
+		this.addEventListenerTracked(overlay, 'mouseleave', () => {
 			hoverDot.classList.remove('visible');
 			if (this.tooltip) {
 				hideTooltip(this.tooltip);
 			}
 		});
 
-		overlay.addEventListener('mousemove', (event) => {
+		this.addEventListenerTracked(overlay, 'mousemove', (event: MouseEvent) => {
 			const rect = svg.getBoundingClientRect();
 			const mouseX = event.clientX - rect.left;
 
@@ -371,7 +381,7 @@ export class StockListComponent extends Component {
 
 	private createSortableHeader(row: HTMLElement, text: string, sortKey: string): void {
 		const th = row.createEl('th', { text, cls: 'stock-list-sortable-header' });
-		th.onclick = () => this.toggleSort(sortKey as any);
+		this.addEventListenerTracked(th, 'click', () => this.toggleSort(sortKey as any));
 		th.title = `Click to sort by ${text.toLowerCase()}`;
 
 		if (this.config.sortBy === sortKey) {
@@ -461,8 +471,19 @@ export class StockListComponent extends Component {
 		}
 	}
 
+	private addEventListenerTracked(element: Element, event: string, handler: EventListener): void {
+		element.addEventListener(event, handler);
+		this.eventListeners.push({ element, event, handler });
+	}
+
 	onunload(): void {
 		this.clearAutoRefresh();
+		
+		for (const { element, event, handler } of this.eventListeners) {
+			element.removeEventListener(event, handler);
+		}
+		this.eventListeners = [];
+		
 		if (this.tooltip && this.tooltip.parentNode) {
 			this.tooltip.parentNode.removeChild(this.tooltip);
 		}

@@ -1,3 +1,10 @@
+export interface OHLCData {
+	open: number;
+	high: number;
+	low: number;
+	close: number;
+}
+
 export interface StockData {
 	symbol: string;
 	price: number;
@@ -8,6 +15,7 @@ export interface StockData {
 	currency: string;
 	historicalPrices: number[];
 	timestamps: number[];
+	ohlcData?: OHLCData[];
 }
 
 export interface StockListBlockConfig {
@@ -38,6 +46,7 @@ export interface SingleStockBlockConfig {
 	refreshInterval?: number; // in minutes
 	title?: string;
 	description?: string;
+	useCandles?: boolean;
 }
 
 export interface StockTickerSettings {
@@ -47,7 +56,7 @@ export interface StockTickerSettings {
 	defaultWidth: number;
 	defaultHeight: number;
 	useBusinessDays: boolean; // whether to interpret 'days' as business days
-	minDataPoints: number; // minimum data points for chart rendering
+	minDataPoints: number;
 	defaultShowSparklines: boolean;
 }
 

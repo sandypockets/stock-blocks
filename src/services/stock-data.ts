@@ -1,6 +1,23 @@
-import { StockData, CacheEntry } from '../types';
+import { StockData, CacheEntry, OHLCData } from '../types';
 import { requestUrl } from 'obsidian';
 import { calculateOptimalDateRange } from '../utils/date-utils';
+
+function isValidPrice(price: any): price is number {
+	return price != null && !isNaN(price);
+}
+
+function createOHLCData(open: any, high: any, low: any, close: any): OHLCData | null {
+	if (!isValidPrice(open) || !isValidPrice(high) || !isValidPrice(low) || !isValidPrice(close)) {
+		return null;
+	}
+	
+	return {
+		open: Number(open),
+		high: Number(high),
+		low: Number(low),
+		close: Number(close)
+	};
+}
 
 export class StockDataService {
 	private cache = new Map<string, CacheEntry>();
@@ -18,8 +35,8 @@ export class StockDataService {
 		this.minDataPoints = minDataPoints;
 	}
 	
-	async getStockData(symbol: string, days: number = 30): Promise<StockData> {
-		const cacheKey = `${symbol}-${days}-${this.useBusinessDays}`;
+	async getStockData(symbol: string, days: number = 30, includeOHLC: boolean = false): Promise<StockData> {
+		const cacheKey = `${symbol}-${days}-${this.useBusinessDays}-${includeOHLC}`;
 		const cached = this.cache.get(cacheKey);
 		
 		if (cached && Date.now() - cached.timestamp < this.cacheDuration) {
@@ -27,7 +44,7 @@ export class StockDataService {
 		}
 		
 		try {
-			const data = await this.fetchRealStockData(symbol, days);
+			const data = await this.fetchRealStockData(symbol, days, includeOHLC);
 			this.cache.set(cacheKey, {
 				data,
 				timestamp: Date.now()
@@ -40,12 +57,9 @@ export class StockDataService {
 		}
 	}
 	
-	private async fetchRealStockData(symbol: string, days: number): Promise<StockData> {
+	private async fetchRealStockData(symbol: string, days: number, includeOHLC: boolean = false): Promise<StockData> {
 		const cleanSymbol = symbol.toUpperCase().trim();
-		
-		// Calculate optimal date range using business day logic
 		const dateRange = calculateOptimalDateRange(days, this.useBusinessDays);
-		
 		const url = `https://query1.finance.yahoo.com/v8/finance/chart/${cleanSymbol}?period1=${dateRange.startDate}&period2=${dateRange.endDate}&interval=1d`;
 		
 		const response = await requestUrl({
@@ -68,23 +82,43 @@ export class StockDataService {
 		const timestamps = result.timestamp;
 		const quotes = result.indicators.quote[0];
 		const closePrices = quotes.close;
+		const openPrices = quotes.open;
+		const highPrices = quotes.high;
+		const lowPrices = quotes.low;
 		
-		// Filter out null values and ensure we have valid data
-		const validData: { timestamp: number; price: number }[] = [];
+		const validData: { timestamp: number; price: number; ohlc?: OHLCData }[] = [];
+		
 		for (let i = 0; i < timestamps.length; i++) {
-			if (closePrices[i] != null && !isNaN(closePrices[i])) {
-				validData.push({
-					timestamp: timestamps[i] * 1000, // Convert to milliseconds
-					price: Number(closePrices[i])
-				});
+			// Skip if close price is invalid (primary requirement)
+			if (!isValidPrice(closePrices[i])) {
+				continue;
 			}
+			
+			const dataPoint = {
+				timestamp: timestamps[i] * 1000, // Convert to milliseconds
+				price: Number(closePrices[i])
+			};
+			
+			if (includeOHLC) {
+				const ohlc = createOHLCData(
+					openPrices?.[i],
+					highPrices?.[i], 
+					lowPrices?.[i],
+					closePrices[i]
+				);
+				
+				if (ohlc) {
+					(dataPoint as any).ohlc = ohlc;
+				}
+			}
+			
+			validData.push(dataPoint);
 		}
 		
 		if (validData.length === 0) {
 			throw new Error(`No valid price data found for ${cleanSymbol}`);
 		}
 		
-		// Sort by timestamp to ensure chronological order
 		validData.sort((a, b) => a.timestamp - b.timestamp);
 		
 		// For small datasets (like 1-day requests), be more selective about deduplication
@@ -93,7 +127,7 @@ export class StockDataService {
 		// Only deduplicate if we have many data points, to avoid losing necessary chart data
 		if (validData.length > days * 2) {
 			// Deduplicate data points from the same calendar date (keep the latest price for each day)
-			const dailyData = new Map<string, { timestamp: number; price: number }>();
+			const dailyData = new Map<string, { timestamp: number; price: number; ohlc?: OHLCData }>();
 			for (const dataPoint of validData) {
 				const date = new Date(dataPoint.timestamp);
 				const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -116,6 +150,20 @@ export class StockDataService {
 		
 		const historicalPrices = finalData.map(d => d.price);
 		const timestampsMs = finalData.map(d => d.timestamp);
+		
+		let ohlcData: OHLCData[] | undefined;
+		if (includeOHLC) {
+			ohlcData = [];
+			for (const dataPoint of finalData) {
+				if (dataPoint.ohlc) {
+					ohlcData.push(dataPoint.ohlc);
+				}
+			}
+			// Only keep the array if we have OHLC data
+			if (ohlcData.length === 0) {
+				ohlcData = undefined;
+			}
+		}
 		
 		const latestPrice = historicalPrices[historicalPrices.length - 1];
 		// Calculate change over the entire period (first day vs last day)
@@ -149,7 +197,7 @@ export class StockDataService {
 			currency = this.detectCurrencyFromSymbol(cleanSymbol);
 		}
 		
-		return {
+		const stockData: StockData = {
 			symbol: cleanSymbol,
 			price: Number(latestPrice.toFixed(2)),
 			change: Number(change.toFixed(2)),
@@ -160,6 +208,13 @@ export class StockDataService {
 			historicalPrices,
 			timestamps: timestampsMs
 		};
+		
+		// Add OHLC data if it was requested and available
+		if (includeOHLC && ohlcData && ohlcData.length > 0) {
+			stockData.ohlcData = ohlcData;
+		}
+		
+		return stockData;
 	}
 	
 	private detectCurrencyFromSymbol(symbol: string): string {
@@ -191,6 +246,83 @@ export class StockDataService {
 	
 	getCacheSize(): number {
 		return this.cache.size;
+	}
+
+	getCacheMemorySize(): string {
+		const sizes = {
+			mapEntry: 32,
+			object: 24,
+			string: 40,
+			array: 40,
+			number: 8,
+			charBytes: 2
+		};
+		
+		let totalBytes = sizes.array; // Map itself
+		
+		for (const [cacheKey, cacheEntry] of this.cache.entries()) {
+			totalBytes += this.calculateEntrySize(cacheKey, cacheEntry, sizes);
+		}
+		
+		return this.formatBytes(totalBytes);
+	}
+
+	private calculateEntrySize(cacheKey: string, cacheEntry: any, sizes: any): number {
+		let entryBytes = sizes.mapEntry + sizes.object; // Map entry + CacheEntry object
+		
+		entryBytes += this.calculateStringSize(cacheKey, sizes);
+		entryBytes += sizes.number; // timestamp
+		
+		entryBytes += this.calculateStockDataSize(cacheEntry.data, sizes);
+		
+		return entryBytes;
+	}
+
+	private calculateStockDataSize(stockData: any, sizes: any): number {
+		let dataBytes = sizes.object; // StockData object
+		
+		dataBytes += this.calculateStringSize(stockData.symbol, sizes);
+		dataBytes += this.calculateStringSize(stockData.currency, sizes);
+		
+		dataBytes += sizes.number * 3; // price, change, changePercent
+		
+		if (stockData.todayChange !== undefined) dataBytes += sizes.number;
+		if (stockData.todayChangePercent !== undefined) dataBytes += sizes.number;
+		
+		dataBytes += this.calculateArraySize(stockData.historicalPrices, sizes);
+		dataBytes += this.calculateArraySize(stockData.timestamps, sizes);
+		
+		if (stockData.ohlcData) {
+			dataBytes += this.calculateOhlcArraySize(stockData.ohlcData, sizes);
+		}
+		
+		return dataBytes;
+	}
+
+	private calculateStringSize(str: string, sizes: any): number {
+		return str.length * sizes.charBytes + sizes.string;
+	}
+
+	private calculateArraySize(array: any[], sizes: any): number {
+		return sizes.array + array.length * sizes.number;
+	}
+
+	private calculateOhlcArraySize(ohlcArray: any[], sizes: any): number {
+		const ohlcObjectSize = sizes.object + sizes.number * 4; // open, high, low, close
+		return sizes.array + ohlcArray.length * ohlcObjectSize;
+	}
+
+	private formatBytes(bytes: number): string {
+		const kilobyte = 1024;
+		const megabyte = kilobyte * 1024;
+		
+		if (bytes < kilobyte) {
+			return `${bytes} B`;
+		} else if (bytes < megabyte) {
+			return `${(bytes / kilobyte).toFixed(1)} KB`;
+		} else {
+			return `${(bytes / megabyte).toFixed(1)} MB`;
+		}
 	}
 	
 	setCacheDuration(minutes: number): void {

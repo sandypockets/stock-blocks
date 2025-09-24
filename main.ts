@@ -88,6 +88,8 @@ export default class StockTickerPlugin extends Plugin {
 				loadingEl.remove();
 
 				const component = componentFactory(config);
+				// Register the component with the plugin for proper cleanup
+				this.addChild(component as any);
 				this.setupRefreshCallback(component, config, refreshDataFetcher);
 				await (component as any).render(data);
 
@@ -157,7 +159,9 @@ export default class StockTickerPlugin extends Plugin {
 	}
 
 	onunload() {
-		// Clean up any resources if needed
+		if (this.stockDataService) {
+			this.stockDataService.clearCache();
+		}
 	}
 
 	async loadSettings() {

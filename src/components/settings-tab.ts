@@ -93,7 +93,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		
 		const usageContainer = containerEl.createEl('div', { cls: 'stock-blocks-usage' });
 
-		usageContainer.createEl('h3', { text: 'Stock Block' });
+		usageContainer.createEl('h3', { text: 'Stock block' });
 		this.createCopyableExample(usageContainer,
 			'```stock-block\n' +
 			'stock: AAPL\n' +
@@ -103,7 +103,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		usageContainer.createEl('p', { text: 'When only the stock is specified, the plugin will use the default settings for all other properties. But you can still override the default settings by specifying additional properties in the block.' });
 		usageContainer.createEl('p', { text: 'Below is an example of a stock block with all available properties specified. The order of properties does not matter.' });
 
-		usageContainer.createEl('h4', { text: 'Stock Block - All properties' });
+		usageContainer.createEl('h4', { text: 'Stock block - all properties' });
 		this.createCopyableExample(usageContainer,
 			'```stock-block\n' +
 			'stock: AAPL\n' +
@@ -121,7 +121,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			'```'
 		);
 
-		usageContainer.createEl('h4', { text: 'Candlestick Chart' });
+		usageContainer.createEl('h4', { text: 'Candlestick chart' });
 		usageContainer.createEl('p', { text: 'Display OHLC (Open, High, Low, Close) data as traditional candlestick bars by setting useCandles to true:' });
 		this.createCopyableExample(usageContainer,
 			'```stock-block\n' +
@@ -141,7 +141,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		const chartTypeCalloutEl = usageContainer.createEl('div', { cls: 'stock-callout' });
 		
 		const chartTypeHeader = chartTypeCalloutEl.createEl('div', { cls: 'callout-title stock-callout-title' });
-		chartTypeHeader.createEl('span', { text: 'Chart Types' });
+		chartTypeHeader.createEl('span', { text: 'Chart types' });
 
 		const chartTypeContent = chartTypeCalloutEl.createEl('div', { cls: 'callout-content stock-callout-content' });
 		
@@ -164,7 +164,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		candleStrong.textContent = 'Candlestick Chart:';
 		candleItem.appendText(' Shows OHLC data as traditional candlestick bars (set useCandles: true)');
 
-		usageContainer.createEl('h3', { text: 'Stock Block List' });
+		usageContainer.createEl('h3', { text: 'Stock block list' });
 		this.createCopyableExample(usageContainer,
 			'```stock-block-list\n' +
 			'stocks: AAPL, MSFT, NVDA, TSLA, SPY\n' +
@@ -193,7 +193,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		usageContainer.createEl('p', { text: 'Common exchange suffixes: ".TO" (Toronto), ".L" (London), ".PA" (Paris), ".DE" (Frankfurt), ".AS" (Amsterdam), ".SW" (Switzerland).' });
 		usageContainer.createEl('p', { text: 'Below is an example of a stock block list with all available properties specified. The order of properties does not matter.' });
 
-		usageContainer.createEl('h4', { text: 'Stock List - All properties' });
+		usageContainer.createEl('h4', { text: 'Stock list - all properties' });
 		this.createCopyableExample(usageContainer,
 			'```stock-block-list\n' +
 			'stocks: AAPL, MSFT, NVDA, TSLA, SPY\n' +

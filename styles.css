@@ -715,3 +715,13 @@ p.stock-list-description {
 .stock-callout-content {
 	color: var(--text-normal) !important;
 }
+
+.stock-callout-list {
+	margin-top: 10px !important;
+	list-style-type: none !important;
+	padding-left: 0 !important;
+}
+
+.stock-callout-list li {
+	margin-bottom: 5px !important;
+}

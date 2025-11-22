@@ -152,13 +152,9 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		const chartTypeIntro = chartTypeContent.createEl('p');
 		chartTypeIntro.textContent = 'Stock blocks support two chart types:';
 		
-		const chartTypeList = chartTypeContent.createEl('ul');
-		chartTypeList.style.marginTop = '10px';
-		chartTypeList.style.listStyleType = 'none';
-		chartTypeList.style.paddingLeft = '0';
+		const chartTypeList = chartTypeContent.createEl('ul', { cls: 'stock-callout-list' });
 		
 		const lineItem = chartTypeList.createEl('li');
-		lineItem.style.marginBottom = '5px';
 		const lineStrong = lineItem.createEl('strong');
 		lineStrong.textContent = 'Line Chart (default):';
 		lineItem.appendText(' Shows price movement as a connected line');
@@ -224,19 +220,14 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		const introText = linkContent.createEl('p');
 		introText.textContent = 'Stock symbols in a stocklist have three format properties. They are Obsidian wikilinks by default.';
 		
-		const list = linkContent.createEl('ul');
-		list.style.marginTop = '10px';
-		list.style.listStyleType = 'none';
-		list.style.paddingLeft = '0';
+		const list = linkContent.createEl('ul', { cls: 'stock-callout-list' });
 		
 		const noneItem = list.createEl('li');
-		noneItem.style.marginBottom = '5px';
 		const noneStrong = noneItem.createEl('strong');
 		noneStrong.textContent = 'none:';
 		noneItem.appendText(' Plain text');
 		
 		const wikilinkItem = list.createEl('li');
-		wikilinkItem.style.marginBottom = '5px';
 		const wikilinkStrong = wikilinkItem.createEl('strong');
 		wikilinkStrong.textContent = 'wikilink:';
 		wikilinkItem.appendText(' [[AAPL]] Obsidian links');

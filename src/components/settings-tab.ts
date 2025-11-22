@@ -82,24 +82,20 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			.addButton(button => button
 				.setButtonText('Clear Cache')
 				.onClick(async () => {
-					try {
-						this.plugin.stockDataService.clearCache();
-						new Notice('Stock data cache cleared');
-						this.display();
-					} catch (error) {
-						new Notice('Error clearing cache');
-					}
-				}));
+				try {
+					this.plugin.stockDataService.clearCache();
+					new Notice('Stock data cache cleared');
+					this.display();
+				} catch (error) {
+					new Notice('Error clearing cache');
+				}
+			}));
 
-
-		containerEl.createEl('h2', { 
-			text: 'Using the plugin',
-			cls: 'stock-blocks-usage-header'
-		});
+		new Setting(containerEl)
+			.setName('Using the plugin')
+			.setHeading();
 		
-		containerEl.createEl('p', { text: 'Using the plugin is as easy as specifying a single stock symbol in your markdown.' });
-		
-		const usageContainer = containerEl.createEl('div', { cls: 'stock-blocks-usage' });
+		containerEl.createEl('p', { text: 'Using the plugin is as easy as specifying a single stock symbol in your markdown.' });		const usageContainer = containerEl.createEl('div', { cls: 'stock-blocks-usage' });
 
 		usageContainer.createEl('h3', { text: 'Stock block' });
 		this.createCopyableExample(usageContainer,

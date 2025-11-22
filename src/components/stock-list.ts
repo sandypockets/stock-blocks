@@ -178,8 +178,16 @@ export class StockListComponent extends Component {
 		);
 
 		this.sparklineChartIds.push(chartId);
-		// Use innerHTML for SVG content - this is safe since we control SVG generation
-		container.innerHTML = svg;
+		
+		// Parse SVG string safely using DOMParser
+		const parser = new DOMParser();
+		const svgDoc = parser.parseFromString(svg, 'image/svg+xml');
+		const svgElement = svgDoc.documentElement;
+		
+		// Clear container and append parsed SVG
+		container.empty();
+		container.appendChild(svgElement);
+		
 		this.setupSparklineInteractions(container, chartId);
 	}
 

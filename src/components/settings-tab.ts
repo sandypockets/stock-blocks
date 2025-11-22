@@ -1,9 +1,17 @@
-import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
+import { App, PluginSettingTab, Setting, Notice, Plugin } from 'obsidian';
+import { StockTickerSettings } from '../settings';
+import { StockDataService } from '../services/stock-data';
+
+interface StockBlocksPlugin extends Plugin {
+	settings: StockTickerSettings;
+	stockDataService: StockDataService;
+	saveSettings(): Promise<void>;
+}
 
 export class StockBlocksSettingTab extends PluginSettingTab {
-	plugin: any;
+	declare plugin: StockBlocksPlugin;
 
-	constructor(app: App, plugin: any) {
+	constructor(app: App, plugin: StockBlocksPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}

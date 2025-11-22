@@ -1,4 +1,4 @@
-import { StockListBlockConfig, StockData } from '../types';
+import { StockListBlockConfig, StockData, ChartData } from '../types';
 import { formatPrice, formatPercentage } from '../utils/formatters';
 import { createTooltip, hideTooltip } from '../utils/tooltip-utils';
 import { createInteractiveSparkline } from '../utils/sparkline-utils';
@@ -193,7 +193,7 @@ export class StockListComponent extends Component {
 		const chartDataAttr = svg.getAttribute('data-chart-data');
 		if (!chartDataAttr) return;
 
-		let chartData: any;
+		let chartData: ChartData;
 		try {
 			chartData = JSON.parse(chartDataAttr);
 		} catch (e) {
@@ -237,7 +237,7 @@ export class StockListComponent extends Component {
 		});
 	}
 
-	private findClosestSparklinePoint(mouseX: number, chartData: any): { x: number; y: number; price: number; timestamp?: number } | null {
+	private findClosestSparklinePoint(mouseX: number, chartData: ChartData): { x: number; y: number; price: number; timestamp?: number } | null {
 		const { points } = chartData;
 		if (!points || points.length === 0) return null;
 

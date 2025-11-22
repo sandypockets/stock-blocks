@@ -75,3 +75,36 @@ export interface StockApiResponse {
 		close: number;
 	}>;
 }
+
+export interface ChartPoint {
+	x: number;
+	y: number;
+	price: number;
+	timestamp?: number;
+	index: number;
+}
+
+export interface CandlePoint {
+	x: number;
+	open: number;
+	high: number;
+	low: number;
+	close: number;
+	timestamp?: number;
+	index: number;
+}
+
+export interface ChartData {
+	points?: ChartPoint[];
+	candles?: CandlePoint[];
+	padding: number;
+	chartWidth: number;
+	chartHeight: number;
+	min: number;
+	max: number;
+	range: number;
+	currency: string;
+	width: number;
+	height: number;
+	isSinglePoint?: boolean;
+}

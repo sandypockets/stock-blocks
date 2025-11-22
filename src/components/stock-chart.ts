@@ -1,4 +1,4 @@
-import { SingleStockBlockConfig, StockData } from '../types';
+import { SingleStockBlockConfig, StockData, ChartData } from '../types';
 import { formatPrice, formatPercentage } from '../utils/formatters';
 import { createTooltip, updateTooltip, updateCandlestickTooltip, hideTooltip } from '../utils/tooltip-utils';
 import { createInteractiveChart, interpolatePrice } from '../utils/line-chart-utils';
@@ -234,7 +234,7 @@ export class StockChartComponent extends Component {
 		const chartDataAttr = svg.getAttribute('data-chart-data');
 		if (!chartDataAttr) return;
 
-		let chartData: any;
+		let chartData: ChartData;
 		try {
 			chartData = JSON.parse(chartDataAttr);
 		} catch (e) {
@@ -334,7 +334,7 @@ export class StockChartComponent extends Component {
 		});
 	}
 
-	private calculateYPosition(price: number, chartData: any): { y: number } {
+	private calculateYPosition(price: number, chartData: ChartData): { y: number } {
 		const { padding, chartHeight, min, range } = chartData;
 		const y = padding + chartHeight - ((price - min) / range) * chartHeight;
 		return { y };

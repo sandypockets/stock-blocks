@@ -1,4 +1,4 @@
-import { OHLCData } from '../types';
+import { OHLCData, ChartData } from '../types';
 import { CANDLESTICK_CONFIG } from './chart-constants';
 import { formatPrice } from './formatters';
 import { calculateOHLCRange, calculateChartDimensions } from './math-utils';
@@ -264,8 +264,12 @@ export function createCandlestickChart(
 	return { svg, chartId };
 }
 
-export function interpolateCandlestickPrice(mouseX: number, chartData: any): { open: number; high: number; low: number; close: number; timestamp: number; x: number } | null {
+export function interpolateCandlestickPrice(mouseX: number, chartData: ChartData): { open: number; high: number; low: number; close: number; timestamp: number; x: number } | null {
 	const { candles, padding, chartWidth } = chartData;
+	
+	if (!candles || candles.length === 0) {
+		return null;
+	}
 	
 	const rightBound = padding + chartWidth;
 	// Ensure mouseX is within chart bounds
@@ -289,7 +293,7 @@ export function interpolateCandlestickPrice(mouseX: number, chartData: any): { o
 		high: closestCandle.high,
 		low: closestCandle.low,
 		close: closestCandle.close,
-		timestamp: closestCandle.timestamp,
+		timestamp: closestCandle.timestamp ?? 0,
 		x: closestCandle.x
 	};
 }

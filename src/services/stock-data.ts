@@ -2,11 +2,20 @@ import { StockData, CacheEntry, OHLCData } from '../types';
 import { requestUrl } from 'obsidian';
 import { calculateOptimalDateRange } from '../utils/date-utils';
 
-function isValidPrice(price: any): price is number {
-	return price != null && !isNaN(price);
+interface MemorySizes {
+	mapEntry: number;
+	object: number;
+	string: number;
+	array: number;
+	number: number;
+	charBytes: number;
 }
 
-function createOHLCData(open: any, high: any, low: any, close: any): OHLCData | null {
+function isValidPrice(price: unknown): price is number {
+	return price != null && !isNaN(price as number);
+}
+
+function createOHLCData(open: unknown, high: unknown, low: unknown, close: unknown): OHLCData | null {
 	if (!isValidPrice(open) || !isValidPrice(high) || !isValidPrice(low) || !isValidPrice(close)) {
 		return null;
 	}
@@ -267,7 +276,7 @@ export class StockDataService {
 		return this.formatBytes(totalBytes);
 	}
 
-	private calculateEntrySize(cacheKey: string, cacheEntry: any, sizes: any): number {
+	private calculateEntrySize(cacheKey: string, cacheEntry: CacheEntry, sizes: MemorySizes): number {
 		let entryBytes = sizes.mapEntry + sizes.object; // Map entry + CacheEntry object
 		
 		entryBytes += this.calculateStringSize(cacheKey, sizes);
@@ -278,7 +287,7 @@ export class StockDataService {
 		return entryBytes;
 	}
 
-	private calculateStockDataSize(stockData: any, sizes: any): number {
+	private calculateStockDataSize(stockData: StockData, sizes: MemorySizes): number {
 		let dataBytes = sizes.object; // StockData object
 		
 		dataBytes += this.calculateStringSize(stockData.symbol, sizes);
@@ -299,15 +308,15 @@ export class StockDataService {
 		return dataBytes;
 	}
 
-	private calculateStringSize(str: string, sizes: any): number {
+	private calculateStringSize(str: string, sizes: MemorySizes): number {
 		return str.length * sizes.charBytes + sizes.string;
 	}
 
-	private calculateArraySize(array: any[], sizes: any): number {
+	private calculateArraySize(array: unknown[], sizes: MemorySizes): number {
 		return sizes.array + array.length * sizes.number;
 	}
 
-	private calculateOhlcArraySize(ohlcArray: any[], sizes: any): number {
+	private calculateOhlcArraySize(ohlcArray: OHLCData[], sizes: MemorySizes): number {
 		const ohlcObjectSize = sizes.object + sizes.number * 4; // open, high, low, close
 		return sizes.array + ohlcArray.length * ohlcObjectSize;
 	}

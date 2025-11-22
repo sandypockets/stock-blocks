@@ -431,7 +431,9 @@ export class StockChartComponent extends Component {
 			// Start auto-refresh
 			if (this.config.refreshInterval && this.config.refreshInterval > 0) {
 				this.autoRefreshInterval = window.setInterval(() => {
-					this.refreshData();
+					void this.refreshData().catch((error) => {
+						console.error('Auto-refresh failed:', error);
+					});
 				}, this.config.refreshInterval * 60 * 1000);
 				autoRefreshBtn.textContent = '⏹ Stop';
 				autoRefreshBtn.classList.add('active');

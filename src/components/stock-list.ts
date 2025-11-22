@@ -443,7 +443,9 @@ export class StockListComponent extends Component {
 			this.clearAutoRefresh();
 			this.autoRefreshInterval = window.setInterval(() => {
 				if (this.refreshDataCallback) {
-					this.refreshDataCallback();
+					void this.refreshDataCallback().catch((error) => {
+						console.error('Auto-refresh failed:', error);
+					});
 				}
 			}, this.config.refreshInterval * 60 * 1000);
 		}

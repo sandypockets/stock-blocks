@@ -264,13 +264,8 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 					copyButton.textContent = 'Copy';
 				}, 2000);
 			} catch (err) {
-				// Fallback for older browsers
-				textArea.select();
-				document.execCommand('copy');
-				copyButton.textContent = 'Copied!';
-				setTimeout(() => {
-					copyButton.textContent = 'Copy';
-				}, 2000);
+				new Notice('Failed to copy to clipboard');
+				console.error('Clipboard copy failed:', err);
 			}
 		});
 

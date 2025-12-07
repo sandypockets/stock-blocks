@@ -95,7 +95,8 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			.setName('Using the plugin')
 			.setHeading();
 		
-		containerEl.createEl('p', { text: 'Using the plugin is as easy as specifying a single stock symbol in your markdown.' });		const usageContainer = containerEl.createEl('div', { cls: 'stock-blocks-usage' });
+		containerEl.createEl('p', { text: 'Using the plugin is as easy as specifying a single stock symbol in your markdown.' });
+		const usageContainer = containerEl.createEl('div', { cls: 'stock-blocks-usage' });
 
 		usageContainer.createEl('h3', { text: 'Stock block' });
 		this.createCopyableExample(usageContainer,

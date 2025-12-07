@@ -179,14 +179,9 @@ export class StockListComponent extends Component {
 
 		this.sparklineChartIds.push(chartId);
 		
-		// Parse SVG string safely using DOMParser
-		const parser = new DOMParser();
-		const svgDoc = parser.parseFromString(svg, 'image/svg+xml');
-		const svgElement = svgDoc.documentElement;
-		
-		// Clear container and append parsed SVG
+		// Insert SVG directly into container
 		container.empty();
-		container.appendChild(svgElement);
+		container.innerHTML = svg;
 		
 		this.setupSparklineInteractions(container, chartId);
 	}
@@ -389,7 +384,8 @@ export class StockListComponent extends Component {
 
 	private createSortableHeader(row: HTMLElement, text: string, sortKey: string): void {
 		const th = row.createEl('th', { text, cls: 'stock-list-sortable-header' });
-		this.addEventListenerTracked(th, 'click', () => this.toggleSort(sortKey as any));
+		const validSortKey = sortKey as 'symbol' | 'price' | 'changePercent' | 'todayChangePercent';
+		this.addEventListenerTracked(th, 'click', () => this.toggleSort(validSortKey));
 		th.title = `Click to sort by ${text.toLowerCase()}`;
 
 		if (this.config.sortBy === sortKey) {

@@ -65,7 +65,7 @@ export class StockChartComponent extends Component {
 		}
 
 		const header = this.container.createEl('div', { cls: 'stock-chart-header' });
-		this.renderHeader(header);
+		await this.renderHeader(header);
 
 		const subtitle = this.container.createEl('div', { cls: 'stock-chart-subtitle' });
 		this.renderSubtitle(subtitle);
@@ -77,14 +77,14 @@ export class StockChartComponent extends Component {
 		this.renderBottomSection(bottomSection);
 	}
 
-	private renderHeader(container: HTMLElement): void {
+	private async renderHeader(container: HTMLElement): Promise<void> {
 		if (!this.data) return;
 
 		const headerContainer = container.createEl('div', { cls: 'stock-chart-header-flex' });
 		const titleRow = headerContainer.createEl('div', { cls: 'stock-chart-title-row' });
 		const symbolContainer = titleRow.createEl('span', { cls: 'stock-chart-symbol' });
 		
-		this.renderSymbol(symbolContainer, this.data.symbol);
+		await this.renderSymbol(symbolContainer, this.data.symbol);
 
 		const _priceEl = titleRow.createEl('span', {
 			text: formatPrice(this.data.price, this.data.currency),
@@ -218,14 +218,9 @@ export class StockChartComponent extends Component {
 
 		this.currentChartId = chartId;
 		
-		// Parse SVG string safely using DOMParser
-		const parser = new DOMParser();
-		const svgDoc = parser.parseFromString(svg, 'image/svg+xml');
-		const svgElement = svgDoc.documentElement;
-		
-		// Clear container and append parsed SVG
+		// Insert SVG directly into container
 		container.empty();
-		container.appendChild(svgElement);
+		container.innerHTML = svg;
 		
 		this.setupChartInteractions(container, chartId);
 	}

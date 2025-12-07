@@ -1,5 +1,6 @@
 import { formatPrice } from './formatters';
 import { calculatePriceRange, calculateChartDimensions } from './math-utils';
+import { ChartData } from '../types';
 
 export function createChart(
 	prices: number[],
@@ -241,8 +242,12 @@ export function createInteractiveChart(
 	return { svg, chartId };
 }
 
-export function interpolatePrice(mouseX: number, chartData: any): { price: number; timestamp: number; x: number } | null {
+export function interpolatePrice(mouseX: number, chartData: ChartData): { price: number; timestamp: number; x: number } | null {
 	const { points, padding, chartWidth } = chartData;
+	
+	if (!points || points.length === 0) {
+		return null;
+	}
 	
 	const rightBound = padding + chartWidth;
 	// Ensure mouseX is within chart bounds
@@ -269,7 +274,7 @@ export function interpolatePrice(mouseX: number, chartData: any): { price: numbe
 		if (Math.abs(point.x - mouseX) <= tolerance) {
 			return { 
 				price: point.price, 
-				timestamp: point.timestamp, 
+				timestamp: point.timestamp ?? 0, 
 				x: point.x 
 			};
 		}
@@ -280,14 +285,14 @@ export function interpolatePrice(mouseX: number, chartData: any): { price: numbe
 		// Same point or single point
 		return { 
 			price: leftPoint.price, 
-			timestamp: leftPoint.timestamp, 
+			timestamp: leftPoint.timestamp ?? 0, 
 			x: leftPoint.x 
 		};
 	}
 
 	const ratio = (mouseX - leftPoint.x) / (rightPoint.x - leftPoint.x);
 	const interpolatedPrice = leftPoint.price + (rightPoint.price - leftPoint.price) * ratio;
-	const interpolatedTimestamp = leftPoint.timestamp + (rightPoint.timestamp - leftPoint.timestamp) * ratio;
+	const interpolatedTimestamp = (leftPoint.timestamp ?? 0) + ((rightPoint.timestamp ?? 0) - (leftPoint.timestamp ?? 0)) * ratio;
 
 	return {
 		price: interpolatedPrice,

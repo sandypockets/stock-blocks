@@ -1,7 +1,7 @@
 {
 	"id": "stock-blocks",
 	"name": "Stock Blocks",
-	"version": "1.4.2",
+	"version": "1.4.3",
 	"minAppVersion": "0.15.0",
 	"description": "Display stock prices, changes, and sparkline charts in your notes with multi-stock lists and single stock charts.",
 	"author": "sandypockets",

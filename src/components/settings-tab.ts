@@ -1,9 +1,17 @@
-import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
+import { App, PluginSettingTab, Setting, Notice, Plugin } from 'obsidian';
+import { StockTickerSettings } from '../settings';
+import { StockDataService } from '../services/stock-data';
+
+interface StockBlocksPlugin extends Plugin {
+	settings: StockTickerSettings;
+	stockDataService: StockDataService;
+	saveSettings(): Promise<void>;
+}
 
 export class StockBlocksSettingTab extends PluginSettingTab {
-	plugin: any;
+	declare plugin: StockBlocksPlugin;
 
-	constructor(app: App, plugin: any) {
+	constructor(app: App, plugin: StockBlocksPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -74,26 +82,23 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			.addButton(button => button
 				.setButtonText('Clear Cache')
 				.onClick(async () => {
-					try {
-						this.plugin.stockDataService.clearCache();
-						new Notice('Stock data cache cleared');
-						this.display();
-					} catch (error) {
-						new Notice('Error clearing cache');
-					}
-				}));
+				try {
+					this.plugin.stockDataService.clearCache();
+					new Notice('Stock data cache cleared');
+					this.display();
+				} catch (error) {
+					new Notice('Error clearing cache');
+				}
+			}));
 
-
-		containerEl.createEl('h2', { 
-			text: 'Using the plugin',
-			cls: 'stock-blocks-usage-header'
-		});
+		new Setting(containerEl)
+			.setName('Using the plugin')
+			.setHeading();
 		
 		containerEl.createEl('p', { text: 'Using the plugin is as easy as specifying a single stock symbol in your markdown.' });
-		
 		const usageContainer = containerEl.createEl('div', { cls: 'stock-blocks-usage' });
 
-		usageContainer.createEl('h3', { text: 'Stock Block' });
+		usageContainer.createEl('h3', { text: 'Stock block' });
 		this.createCopyableExample(usageContainer,
 			'```stock-block\n' +
 			'stock: AAPL\n' +
@@ -103,7 +108,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		usageContainer.createEl('p', { text: 'When only the stock is specified, the plugin will use the default settings for all other properties. But you can still override the default settings by specifying additional properties in the block.' });
 		usageContainer.createEl('p', { text: 'Below is an example of a stock block with all available properties specified. The order of properties does not matter.' });
 
-		usageContainer.createEl('h4', { text: 'Stock Block - All properties' });
+		usageContainer.createEl('h4', { text: 'Stock block - all properties' });
 		this.createCopyableExample(usageContainer,
 			'```stock-block\n' +
 			'stock: AAPL\n' +
@@ -121,7 +126,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			'```'
 		);
 
-		usageContainer.createEl('h4', { text: 'Candlestick Chart' });
+		usageContainer.createEl('h4', { text: 'Candlestick chart' });
 		usageContainer.createEl('p', { text: 'Display OHLC (Open, High, Low, Close) data as traditional candlestick bars by setting useCandles to true:' });
 		this.createCopyableExample(usageContainer,
 			'```stock-block\n' +
@@ -141,20 +146,16 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		const chartTypeCalloutEl = usageContainer.createEl('div', { cls: 'stock-callout' });
 		
 		const chartTypeHeader = chartTypeCalloutEl.createEl('div', { cls: 'callout-title stock-callout-title' });
-		chartTypeHeader.createEl('span', { text: 'Chart Types' });
+		chartTypeHeader.createEl('span', { text: 'Chart types' });
 
 		const chartTypeContent = chartTypeCalloutEl.createEl('div', { cls: 'callout-content stock-callout-content' });
 		
 		const chartTypeIntro = chartTypeContent.createEl('p');
 		chartTypeIntro.textContent = 'Stock blocks support two chart types:';
 		
-		const chartTypeList = chartTypeContent.createEl('ul');
-		chartTypeList.style.marginTop = '10px';
-		chartTypeList.style.listStyleType = 'none';
-		chartTypeList.style.paddingLeft = '0';
+		const chartTypeList = chartTypeContent.createEl('ul', { cls: 'stock-callout-list' });
 		
 		const lineItem = chartTypeList.createEl('li');
-		lineItem.style.marginBottom = '5px';
 		const lineStrong = lineItem.createEl('strong');
 		lineStrong.textContent = 'Line Chart (default):';
 		lineItem.appendText(' Shows price movement as a connected line');
@@ -164,7 +165,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		candleStrong.textContent = 'Candlestick Chart:';
 		candleItem.appendText(' Shows OHLC data as traditional candlestick bars (set useCandles: true)');
 
-		usageContainer.createEl('h3', { text: 'Stock Block List' });
+		usageContainer.createEl('h3', { text: 'Stock block list' });
 		this.createCopyableExample(usageContainer,
 			'```stock-block-list\n' +
 			'stocks: AAPL, MSFT, NVDA, TSLA, SPY\n' +
@@ -193,7 +194,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		usageContainer.createEl('p', { text: 'Common exchange suffixes: ".TO" (Toronto), ".L" (London), ".PA" (Paris), ".DE" (Frankfurt), ".AS" (Amsterdam), ".SW" (Switzerland).' });
 		usageContainer.createEl('p', { text: 'Below is an example of a stock block list with all available properties specified. The order of properties does not matter.' });
 
-		usageContainer.createEl('h4', { text: 'Stock List - All properties' });
+		usageContainer.createEl('h4', { text: 'Stock list - all properties' });
 		this.createCopyableExample(usageContainer,
 			'```stock-block-list\n' +
 			'stocks: AAPL, MSFT, NVDA, TSLA, SPY\n' +
@@ -220,19 +221,14 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		const introText = linkContent.createEl('p');
 		introText.textContent = 'Stock symbols in a stocklist have three format properties. They are Obsidian wikilinks by default.';
 		
-		const list = linkContent.createEl('ul');
-		list.style.marginTop = '10px';
-		list.style.listStyleType = 'none';
-		list.style.paddingLeft = '0';
+		const list = linkContent.createEl('ul', { cls: 'stock-callout-list' });
 		
 		const noneItem = list.createEl('li');
-		noneItem.style.marginBottom = '5px';
 		const noneStrong = noneItem.createEl('strong');
 		noneStrong.textContent = 'none:';
 		noneItem.appendText(' Plain text');
 		
 		const wikilinkItem = list.createEl('li');
-		wikilinkItem.style.marginBottom = '5px';
 		const wikilinkStrong = wikilinkItem.createEl('strong');
 		wikilinkStrong.textContent = 'wikilink:';
 		wikilinkItem.appendText(' [[AAPL]] Obsidian links');
@@ -269,13 +265,8 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 					copyButton.textContent = 'Copy';
 				}, 2000);
 			} catch (err) {
-				// Fallback for older browsers
-				textArea.select();
-				document.execCommand('copy');
-				copyButton.textContent = 'Copied!';
-				setTimeout(() => {
-					copyButton.textContent = 'Copy';
-				}, 2000);
+				new Notice('Failed to copy to clipboard');
+				console.error('Clipboard copy failed:', err);
 			}
 		});
 

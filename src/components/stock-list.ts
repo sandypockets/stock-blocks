@@ -1,4 +1,4 @@
-import { StockListBlockConfig, StockData } from '../types';
+import { StockListBlockConfig, StockData, ChartData } from '../types';
 import { formatPrice, formatPercentage } from '../utils/formatters';
 import { createTooltip, hideTooltip } from '../utils/tooltip-utils';
 import { createInteractiveSparkline } from '../utils/sparkline-utils';
@@ -178,8 +178,16 @@ export class StockListComponent extends Component {
 		);
 
 		this.sparklineChartIds.push(chartId);
-		// Use innerHTML for SVG content - this is safe since we control SVG generation
-		container.innerHTML = svg;
+		
+		// Parse SVG string safely using DOMParser
+		const parser = new DOMParser();
+		const svgDoc = parser.parseFromString(svg, 'image/svg+xml');
+		const svgElement = svgDoc.documentElement;
+		
+		// Clear container and append parsed SVG
+		container.empty();
+		container.appendChild(svgElement);
+		
 		this.setupSparklineInteractions(container, chartId);
 	}
 
@@ -193,7 +201,7 @@ export class StockListComponent extends Component {
 		const chartDataAttr = svg.getAttribute('data-chart-data');
 		if (!chartDataAttr) return;
 
-		let chartData: any;
+		let chartData: ChartData;
 		try {
 			chartData = JSON.parse(chartDataAttr);
 		} catch (e) {
@@ -237,7 +245,7 @@ export class StockListComponent extends Component {
 		});
 	}
 
-	private findClosestSparklinePoint(mouseX: number, chartData: any): { x: number; y: number; price: number; timestamp?: number } | null {
+	private findClosestSparklinePoint(mouseX: number, chartData: ChartData): { x: number; y: number; price: number; timestamp?: number } | null {
 		const { points } = chartData;
 		if (!points || points.length === 0) return null;
 
@@ -443,7 +451,9 @@ export class StockListComponent extends Component {
 			this.clearAutoRefresh();
 			this.autoRefreshInterval = window.setInterval(() => {
 				if (this.refreshDataCallback) {
-					this.refreshDataCallback();
+					void this.refreshDataCallback().catch((error) => {
+						console.error('Auto-refresh failed:', error);
+					});
 				}
 			}, this.config.refreshInterval * 60 * 1000);
 		}

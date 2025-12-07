@@ -260,3 +260,13 @@ this.registerInterval(window.setInterval(() => { /* ... */ }, 1000));
 - Developer policies: https://docs.obsidian.md/Developer+policies
 - Plugin guidelines: https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines
 - Style guide: https://help.obsidian.md/style-guide
+
+## Additional requirements
+- Always use sentence case for UI text.
+- Ensure that async arrow functions have an await expression.
+- Avoid using the `any` type; prefer explicit types for better type safety.
+- For a consistent UI use new Setting(containerEl).setName(...).setHeading() instead of creating HTML heading elements directly.
+- Avoid setting styles directly via element.style.marginTop or element.style.listStyleType, etc. Use CSS classes for better theming and maintainability. Use the setCssProps function to change CSS properties.
+- Never use deprecated code (like `execCommand`)
+- Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the void operator.
+- Do not write to DOM directly using innerHTML/outerHTML property

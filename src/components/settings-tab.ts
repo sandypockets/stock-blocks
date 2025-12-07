@@ -23,9 +23,9 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Data source')
-			.setDesc('Stock data is fetched from Yahoo Finance API with clear error messages if unavailable')
+			.setDesc('Stock data is fetched from Yahoo Finance api with clear error messages if unavailable')
 			.addText(text => text
-				.setPlaceholder('No API key required')
+				.setPlaceholder('No api key required')
 				.setValue('Yahoo Finance (Free)')
 				.setDisabled(true));
 
@@ -125,7 +125,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			'showLastUpdate: true\n' +
 			'showTodayChange: true\n' +
 			'refreshInterval: 15\n' +
-			'title: Apple Inc. Stock Performance\n' +
+			'title: Apple Inc. stock performance\n' +
 			'description: One year price chart\n' +
 			'```'
 		);
@@ -133,7 +133,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		new Setting(usageContainer)
 			.setName('Candlestick chart')
 			.setHeading();
-		usageContainer.createEl('p', { text: 'Display OHLC (Open, High, Low, Close) data as traditional candlestick bars by setting useCandles to true:' });
+		usageContainer.createEl('p', { text: 'Display OHLC (open, high, low, close) data as traditional candlestick bars by setting useCandles to true:' });
 		this.createCopyableExample(usageContainer,
 			'```stock-block\n' +
 			'stock: AAPL\n' +
@@ -163,13 +163,13 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		
 		const lineItem = chartTypeList.createEl('li');
 		const lineStrong = lineItem.createEl('strong');
-		lineStrong.textContent = 'Line Chart (default):';
-		lineItem.appendText(' Shows price movement as a connected line');
+		lineStrong.textContent = 'Line chart (default):';
+		lineItem.appendText(' shows price movement as a connected line');
 		
 		const candleItem = chartTypeList.createEl('li');
 		const candleStrong = candleItem.createEl('strong');
-		candleStrong.textContent = 'Candlestick Chart:';
-		candleItem.appendText(' Shows OHLC data as traditional candlestick bars (set useCandles: true)');
+		candleStrong.textContent = 'Candlestick chart:';
+		candleItem.appendText(' shows OHLC data as traditional candlestick bars (set useCandles: true)');
 
 		new Setting(usageContainer)
 			.setName('Stock block list')
@@ -198,8 +198,8 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		this.createCopyableExample(usageContainer,
 			'```stock-block-list\n' +
 			'stocks: SHOP.TO, ASML.AS, VOD.L, SAP.DE, NES.SW\n' +
-			'title: International Portfolio\n' +
-			'description: Stocks from Toronto, Amsterdam, London, Frankfurt, and Zurich\n' +
+			'title: International portfolio\n' +
+			'description: stocks from Toronto, Amsterdam, London, Frankfurt, and Zurich\n' +
 			'```'
 		);
 
@@ -220,7 +220,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			'showLastUpdate: true\n' +
 			'showTodayChange: true\n' +
 			'refreshInterval: 15\n' +
-			'title: Stock Performance List\n' +
+			'title: stock performance list\n' +
 			'description: One year price chart of my watch list\n' +
 			'```'
 		);
@@ -240,7 +240,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		const noneItem = list.createEl('li');
 		const noneStrong = noneItem.createEl('strong');
 		noneStrong.textContent = 'none:';
-		noneItem.appendText(' Plain text');
+		noneItem.appendText(' plain text');
 		
 		const wikilinkItem = list.createEl('li');
 		const wikilinkStrong = wikilinkItem.createEl('strong');
@@ -250,7 +250,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		const markdownItem = list.createEl('li');
 		const markdownStrong = markdownItem.createEl('strong');
 		markdownStrong.textContent = 'markdown:';
-		markdownItem.appendText(' Links to Yahoo Finance');
+		markdownItem.appendText(' links to Yahoo Finance');
 	}
 
 	private createCopyableExample(container: HTMLElement, codeText: string): void {

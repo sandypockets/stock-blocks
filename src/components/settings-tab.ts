@@ -80,16 +80,16 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			.setName('Clear cache')
 			.setDesc(`Clear all cached stock data (current cache: ${this.plugin.stockDataService.getCacheSize()} entries, ${this.plugin.stockDataService.getCacheMemorySize()})`)
 			.addButton(button => button
-				.setButtonText('Clear Cache')
-				.onClick(async () => {
-				try {
-					this.plugin.stockDataService.clearCache();
-					new Notice('Stock data cache cleared');
-					this.display();
-				} catch (error) {
-					new Notice('Error clearing cache');
-				}
-			}));
+				.setButtonText('Clear cache')
+				.onClick(() => {
+					try {
+						this.plugin.stockDataService.clearCache();
+						new Notice('Stock data cache cleared');
+						this.display();
+					} catch (error) {
+						new Notice('Error clearing cache');
+					}
+				}));
 
 		new Setting(containerEl)
 			.setName('Using the plugin')
@@ -98,7 +98,9 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		containerEl.createEl('p', { text: 'Using the plugin is as easy as specifying a single stock symbol in your markdown.' });
 		const usageContainer = containerEl.createEl('div', { cls: 'stock-blocks-usage' });
 
-		usageContainer.createEl('h3', { text: 'Stock block' });
+		new Setting(usageContainer)
+			.setName('Stock block')
+			.setHeading();
 		this.createCopyableExample(usageContainer,
 			'```stock-block\n' +
 			'stock: AAPL\n' +
@@ -108,7 +110,9 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		usageContainer.createEl('p', { text: 'When only the stock is specified, the plugin will use the default settings for all other properties. But you can still override the default settings by specifying additional properties in the block.' });
 		usageContainer.createEl('p', { text: 'Below is an example of a stock block with all available properties specified. The order of properties does not matter.' });
 
-		usageContainer.createEl('h4', { text: 'Stock block - all properties' });
+		new Setting(usageContainer)
+			.setName('Stock block - all properties')
+			.setHeading();
 		this.createCopyableExample(usageContainer,
 			'```stock-block\n' +
 			'stock: AAPL\n' +
@@ -126,7 +130,9 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			'```'
 		);
 
-		usageContainer.createEl('h4', { text: 'Candlestick chart' });
+		new Setting(usageContainer)
+			.setName('Candlestick chart')
+			.setHeading();
 		usageContainer.createEl('p', { text: 'Display OHLC (Open, High, Low, Close) data as traditional candlestick bars by setting useCandles to true:' });
 		this.createCopyableExample(usageContainer,
 			'```stock-block\n' +
@@ -165,7 +171,9 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		candleStrong.textContent = 'Candlestick Chart:';
 		candleItem.appendText(' Shows OHLC data as traditional candlestick bars (set useCandles: true)');
 
-		usageContainer.createEl('h3', { text: 'Stock block list' });
+		new Setting(usageContainer)
+			.setName('Stock block list')
+			.setHeading();
 		this.createCopyableExample(usageContainer,
 			'```stock-block-list\n' +
 			'stocks: AAPL, MSFT, NVDA, TSLA, SPY\n' +
@@ -174,7 +182,9 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 
 		usageContainer.createEl('p', { text: 'To view stocks from international exchanges like the Toronto Stock Exchange (TSX), London Stock Exchange (LSE), or others, simply append the appropriate exchange suffix to the stock symbol.' });
 
-		usageContainer.createEl('h4', { text: 'International stock chart' });
+		new Setting(usageContainer)
+			.setName('International stock chart')
+			.setHeading();
 		this.createCopyableExample(usageContainer,
 			'```stock-block\n' +
 			'stock: SHOP.TO\n' +
@@ -182,7 +192,9 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			'```'
 		);
 
-		usageContainer.createEl('h4', { text: 'Global stock list' });
+		new Setting(usageContainer)
+			.setName('Global stock list')
+			.setHeading();
 		this.createCopyableExample(usageContainer,
 			'```stock-block-list\n' +
 			'stocks: SHOP.TO, ASML.AS, VOD.L, SAP.DE, NES.SW\n' +
@@ -194,7 +206,9 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		usageContainer.createEl('p', { text: 'Common exchange suffixes: ".TO" (Toronto), ".L" (London), ".PA" (Paris), ".DE" (Frankfurt), ".AS" (Amsterdam), ".SW" (Switzerland).' });
 		usageContainer.createEl('p', { text: 'Below is an example of a stock block list with all available properties specified. The order of properties does not matter.' });
 
-		usageContainer.createEl('h4', { text: 'Stock list - all properties' });
+		new Setting(usageContainer)
+			.setName('Stock list - all properties')
+			.setHeading();
 		this.createCopyableExample(usageContainer,
 			'```stock-block-list\n' +
 			'stocks: AAPL, MSFT, NVDA, TSLA, SPY\n' +
@@ -257,17 +271,19 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			text: 'Copy'
 		});
 
-		copyButton.addEventListener('click', async () => {
-			try {
-				await navigator.clipboard.writeText(codeText);
-				copyButton.textContent = 'Copied!';
-				setTimeout(() => {
-					copyButton.textContent = 'Copy';
-				}, 2000);
-			} catch (err) {
-				new Notice('Failed to copy to clipboard');
-				console.error('Clipboard copy failed:', err);
-			}
+		copyButton.addEventListener('click', () => {
+			void (async () => {
+				try {
+					await navigator.clipboard.writeText(codeText);
+					copyButton.textContent = 'Copied!';
+					setTimeout(() => {
+						copyButton.textContent = 'Copy';
+					}, 2000);
+				} catch (err) {
+					new Notice('Failed to copy to clipboard');
+					console.error('Clipboard copy failed:', err);
+				}
+			})();
 		});
 
 		textArea.addEventListener('click', () => {

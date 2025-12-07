@@ -1,4 +1,4 @@
-import { Plugin, MarkdownPostProcessorContext } from 'obsidian';
+import { Plugin, MarkdownPostProcessorContext, MarkdownView, Component } from 'obsidian';
 import { StockTickerSettings, DEFAULT_SETTINGS } from './src/settings';
 import { StockDataService } from './src/services/stock-data';
 import { StockListComponent } from './src/components/stock-list';
@@ -34,11 +34,11 @@ export default class StockTickerPlugin extends Plugin {
 			callback: () => {
 				this.stockDataService.clearCache();
 				// Trigger a re-render by refreshing the current file
-				const activeLeaf = this.app.workspace.activeLeaf;
-				if (activeLeaf && activeLeaf.view.getViewType() === 'markdown') {
-					const markdownView = activeLeaf.view as any;
-					if (markdownView.currentMode?.rerender) {
-						markdownView.currentMode.rerender(true);
+				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
+				if (markdownView) {
+					const currentMode = (markdownView as MarkdownView & { currentMode?: { rerender?: (force: boolean) => void } }).currentMode;
+					if (currentMode?.rerender) {
+						currentMode.rerender(true);
 					}
 				}
 			}
@@ -56,12 +56,12 @@ export default class StockTickerPlugin extends Plugin {
 			this.dataFetcher.fetchListData.bind(this.dataFetcher),
 			(config: StockListBlockConfig) => new StockListComponent(el, config, this.app),
 			async (component: StockListComponent, config: StockListBlockConfig) => {
-				return this.dataFetcher.createListRefreshFetcher(config)();
+				return await this.dataFetcher.createListRefreshFetcher(config)();
 			}
 		);
 	}
 
-	private async processStockBlock<TConfig, TComponent, TData>(
+	private async processStockBlock<TConfig, TComponent extends Component & { render: (data: TData) => void | Promise<void> }, TData>(
 		source: string,
 		el: HTMLElement,
 		ctx: MarkdownPostProcessorContext,
@@ -89,9 +89,9 @@ export default class StockTickerPlugin extends Plugin {
 
 				const component = componentFactory(config);
 				// Register the component with the plugin for proper cleanup
-				this.addChild(component as any);
+				this.addChild(component);
 				this.setupRefreshCallback(component, config, refreshDataFetcher);
-				await (component as any).render(data);
+				await component.render(data);
 
 			} catch (error) {
 				loadingEl.remove();
@@ -109,16 +109,16 @@ export default class StockTickerPlugin extends Plugin {
 		});
 	}
 
-	private setupRefreshCallback<TComponent, TConfig, TData>(
+	private setupRefreshCallback<TComponent extends Component & { refreshDataCallback?: () => Promise<void>; render: (data: TData) => void | Promise<void> }, TConfig, TData>(
 		component: TComponent,
 		config: TConfig,
 		refreshDataFetcher: (component: TComponent, config: TConfig) => Promise<TData>
 	) {
-		(component as any).refreshDataCallback = async () => {
+		component.refreshDataCallback = async () => {
 			try {
 				this.stockDataService.clearCache();
 				const freshData = await refreshDataFetcher(component, config);
-				await (component as any).render(freshData);
+				await component.render(freshData);
 			} catch (error) {
 				// Error refreshing data - fail silently or handle as needed
 			}
@@ -136,7 +136,7 @@ export default class StockTickerPlugin extends Plugin {
 			this.dataFetcher.fetchChartData.bind(this.dataFetcher),
 			(config: SingleStockBlockConfig) => new StockChartComponent(el, config, this.app),
 			async (component: StockChartComponent, config: SingleStockBlockConfig) => {
-				return this.dataFetcher.createChartRefreshFetcher(config)();
+				return await this.dataFetcher.createChartRefreshFetcher(config)();
 			}
 		);
 	}

@@ -119,13 +119,11 @@ export class StockListComponent extends Component {
 				cls: 'stock-list-info'
 			});
 
-			const refreshBtn = rightSection.createEl('button', {
-				text: '↻ Refresh',
-				cls: 'stock-list-refresh-btn stock-list-refresh-btn-bottom'
-			});
-			this.addEventListenerTracked(refreshBtn, 'click', () => this.refreshData());
-
-			if (this.config.refreshInterval && this.config.refreshInterval > 0) {
+		const refreshBtn = rightSection.createEl('button', {
+			text: '↻ Refresh',
+			cls: 'stock-list-refresh-btn stock-list-refresh-btn-bottom'
+		});
+		this.addEventListenerTracked(refreshBtn, 'click', () => void this.refreshData());			if (this.config.refreshInterval && this.config.refreshInterval > 0) {
 				const autoRefreshBtn = rightSection.createEl('button', {
 					text: '⏱ Auto',
 					cls: 'stock-list-auto-refresh-btn stock-list-auto-refresh-btn-bottom'

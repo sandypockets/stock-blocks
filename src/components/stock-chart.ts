@@ -216,11 +216,12 @@ export class StockChartComponent extends Component {
 
 		this.currentChartId = chartId;
 		
-		// Insert SVG directly into container
-		container.empty();
-		container.innerHTML = svg;
-		
-		this.setupChartInteractions(container, chartId);
+	// Insert SVG into container
+	container.empty();
+	const range = document.createRange();
+	range.selectNode(container);
+	const fragment = range.createContextualFragment(svg);
+	container.appendChild(fragment);		this.setupChartInteractions(container, chartId);
 	}
 
 	private setupChartInteractions(container: HTMLElement, chartId: string): void {
@@ -400,7 +401,7 @@ export class StockChartComponent extends Component {
 					this
 				);
 				break;
-			case 'markdown':
+			case 'markdown': {
 				// Create a proper HTML link
 				const link = container.createEl('a', {
 					text: symbol,
@@ -410,6 +411,7 @@ export class StockChartComponent extends Component {
 				link.setAttribute('target', '_blank');
 				link.setAttribute('rel', 'noopener');
 				break;
+			}
 			case 'none':
 			default:
 				container.createEl('span', { text: symbol });

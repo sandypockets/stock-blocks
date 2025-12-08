@@ -146,7 +146,7 @@ export class StockListComponent extends Component {
 					this
 				);
 				break;
-			case 'markdown':
+			case 'markdown': {
 				// Create a proper HTML link
 				const link = container.createEl('a', {
 					text: symbol,
@@ -155,6 +155,7 @@ export class StockListComponent extends Component {
 				link.setAttribute('target', '_blank');
 				link.setAttribute('rel', 'noopener noreferrer');
 				break;
+			}
 			default:
 				container.setText(symbol);
 				break;
@@ -177,11 +178,12 @@ export class StockListComponent extends Component {
 
 		this.sparklineChartIds.push(chartId);
 		
-		// Insert SVG directly into container
-		container.empty();
-		container.innerHTML = svg;
-		
-		this.setupSparklineInteractions(container, chartId);
+	// Insert SVG into container
+	container.empty();
+	const range = document.createRange();
+	range.selectNode(container);
+	const fragment = range.createContextualFragment(svg);
+	container.appendChild(fragment);		this.setupSparklineInteractions(container, chartId);
 	}
 
 	private setupSparklineInteractions(container: HTMLElement, chartId: string): void {
@@ -425,13 +427,14 @@ export class StockListComponent extends Component {
 					break;
 				case 'changePercent':
 					comparison = a.changePercent - b.changePercent;
-					break;
-				case 'todayChangePercent':
-					// Handle undefined values for today's change
-					const aToday = a.todayChangePercent ?? 0;
-					const bToday = b.todayChangePercent ?? 0;
-					comparison = aToday - bToday;
-					break;
+				break;
+			case 'todayChangePercent': {
+				// Handle undefined values for today's change
+				const aToday = a.todayChangePercent ?? 0;
+				const bToday = b.todayChangePercent ?? 0;
+				comparison = aToday - bToday;
+				break;
+			}
 				default:
 					return 0;
 			}

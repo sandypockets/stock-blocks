@@ -103,7 +103,7 @@ export class StockDataService {
 				continue;
 			}
 			
-			const dataPoint = {
+			const dataPoint: { timestamp: number; price: number; ohlc?: OHLCData } = {
 				timestamp: timestamps[i] * 1000, // Convert to milliseconds
 				price: Number(closePrices[i])
 			};
@@ -117,7 +117,7 @@ export class StockDataService {
 				);
 				
 				if (ohlc) {
-					(dataPoint as any).ohlc = ohlc;
+					dataPoint.ohlc = ohlc;
 				}
 			}
 			

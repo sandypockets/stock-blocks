@@ -23,7 +23,7 @@ export class StockChartComponent extends Component {
 		super();
 		this.container = container;
 		this.config = config;
-		this.app = app || (window as any).app;
+		this.app = app || (window as unknown as { app: App }).app;
 		this.tooltip = createTooltip();
 	}
 

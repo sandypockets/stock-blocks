@@ -314,7 +314,7 @@ export class StockListComponent extends Component {
 	}
 
 	updateData(stockDataArray: StockData[]): void {
-		this.render(stockDataArray);
+		void this.render(stockDataArray);
 	}
 
 	private shouldShowTodayColumn(): boolean {
@@ -404,7 +404,7 @@ export class StockListComponent extends Component {
 		}
 
 		this.sortData();
-		this.render(this.data);
+		void this.render(this.data);
 	}
 
 	private sortData(): void {

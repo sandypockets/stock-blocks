@@ -343,12 +343,12 @@ export class StockChartComponent extends Component {
 	updateConfig(config: SingleStockBlockConfig): void {
 		this.config = config;
 		if (this.data) {
-			this.render(this.data);
+			void this.render(this.data);
 		}
 	}
 
 	updateData(stockData: StockData): void {
-		this.render(stockData);
+		void this.render(stockData);
 	}
 
 	private shouldShowTodayChange(): boolean {

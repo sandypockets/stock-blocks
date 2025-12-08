@@ -216,11 +216,12 @@ export class StockChartComponent extends Component {
 
 		this.currentChartId = chartId;
 		
-		// Insert SVG directly into container
-		container.empty();
-		container.innerHTML = svg;
-		
-		this.setupChartInteractions(container, chartId);
+	// Insert SVG into container
+	container.empty();
+	const range = document.createRange();
+	range.selectNode(container);
+	const fragment = range.createContextualFragment(svg);
+	container.appendChild(fragment);		this.setupChartInteractions(container, chartId);
 	}
 
 	private setupChartInteractions(container: HTMLElement, chartId: string): void {

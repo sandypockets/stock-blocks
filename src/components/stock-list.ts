@@ -178,11 +178,12 @@ export class StockListComponent extends Component {
 
 		this.sparklineChartIds.push(chartId);
 		
-		// Insert SVG directly into container
-		container.empty();
-		container.innerHTML = svg;
-		
-		this.setupSparklineInteractions(container, chartId);
+	// Insert SVG into container
+	container.empty();
+	const range = document.createRange();
+	range.selectNode(container);
+	const fragment = range.createContextualFragment(svg);
+	container.appendChild(fragment);		this.setupSparklineInteractions(container, chartId);
 	}
 
 	private setupSparklineInteractions(container: HTMLElement, chartId: string): void {

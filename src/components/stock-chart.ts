@@ -400,7 +400,7 @@ export class StockChartComponent extends Component {
 					this
 				);
 				break;
-			case 'markdown':
+			case 'markdown': {
 				// Create a proper HTML link
 				const link = container.createEl('a', {
 					text: symbol,
@@ -410,6 +410,7 @@ export class StockChartComponent extends Component {
 				link.setAttribute('target', '_blank');
 				link.setAttribute('rel', 'noopener');
 				break;
+			}
 			case 'none':
 			default:
 				container.createEl('span', { text: symbol });

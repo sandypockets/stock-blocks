@@ -23,18 +23,21 @@ export function parseStockListConfig(content: string, settings?: StockTickerSett
 			case 'stock':
 				config.tickers = value.split(',').map(t => t.trim()).filter(t => t);
 				break;
-			case 'days':
+			case 'days': {
 				const days = parseInt(value, 10);
 				config.days = isNaN(days) ? undefined : days;
 				break;
-			case 'width':
+			}
+			case 'width': {
 				const width = parseInt(value, 10);
 				config.width = isNaN(width) ? undefined : width;
 				break;
-			case 'height':
+			}
+			case 'height': {
 				const height = parseInt(value, 10);
 				config.height = isNaN(height) ? undefined : height;
 				break;
+			}
 			case 'linkStyle':
 				config.linkStyle = ['none', 'wikilink', 'markdown'].includes(value) 
 					? value as 'none' | 'wikilink' | 'markdown' 
@@ -55,24 +58,23 @@ export function parseStockListConfig(content: string, settings?: StockTickerSett
 				config.sortOrder = ['asc', 'desc'].includes(value) 
 					? value as 'asc' | 'desc' 
 					: undefined;
-				break;
-			case 'showLastUpdate':
-				config.showLastUpdate = value.toLowerCase() === 'true';
-				break;
-			case 'showTodayChange':
-				config.showTodayChange = value.toLowerCase() === 'true';
-				break;
-			case 'refreshInterval':
-				const refreshInterval = parseInt(value, 10);
-				config.refreshInterval = isNaN(refreshInterval) ? undefined : refreshInterval;
-				break;
-			case 'sparkline':
-				config.sparkline = value.toLowerCase() === 'true';
-				break;
+			break;
+		case 'showLastUpdate':
+			config.showLastUpdate = value.toLowerCase() === 'true';
+			break;
+		case 'showTodayChange':
+			config.showTodayChange = value.toLowerCase() === 'true';
+			break;
+		case 'refreshInterval': {
+			const refreshInterval = parseInt(value, 10);
+			config.refreshInterval = isNaN(refreshInterval) ? undefined : refreshInterval;
+			break;
 		}
+		case 'sparkline':
+			config.sparkline = value.toLowerCase() === 'true';
+			break;
 	}
-	
-	return {
+}	return {
 		tickers: config.tickers || [],
 		days: config.days ?? (settings?.defaultDays ?? 120),
 		width: config.width ?? (settings?.defaultWidth ?? 500),
@@ -117,18 +119,21 @@ export function parseStockChartConfig(content: string, settings?: StockTickerSet
 					config.symbol = value;
 				}
 				break;
-			case 'days':
+			case 'days': {
 				const days = parseInt(value, 10);
 				config.days = isNaN(days) ? undefined : days;
 				break;
-			case 'width':
+			}
+			case 'width': {
 				const width = parseInt(value, 10);
 				config.width = isNaN(width) ? undefined : width;
 				break;
-			case 'height':
+			}
+			case 'height': {
 				const height = parseInt(value, 10);
 				config.height = isNaN(height) ? undefined : height;
 				break;
+			}
 			case 'showAxes':
 				config.showAxes = value.toLowerCase() === 'true';
 				break;
@@ -143,10 +148,11 @@ export function parseStockChartConfig(content: string, settings?: StockTickerSet
 			case 'showTodayChange':
 				config.showTodayChange = value.toLowerCase() === 'true';
 				break;
-			case 'refreshInterval':
+			case 'refreshInterval': {
 				const refreshInterval = parseInt(value, 10);
 				config.refreshInterval = isNaN(refreshInterval) ? undefined : refreshInterval;
 				break;
+			}
 			case 'title':
 				config.title = value;
 				break;

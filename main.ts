@@ -152,7 +152,7 @@ export default class StockTickerPlugin extends Plugin {
 		
 		const hintEl = errorContainer.createEl('div', { cls: 'stock-error-hint' });
 		if (message.includes('Yahoo Finance')) {
-			hintEl.setText('Yahoo Finance api may be temporarily unavailable. Try again later or check your internet connection.');
+			hintEl.setText('Yahoo Finance API may be temporarily unavailable. Try again later or check your internet connection.');
 		} else {
 			hintEl.setText('Check the configuration parameters and try again.');
 		}

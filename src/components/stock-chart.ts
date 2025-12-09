@@ -103,10 +103,10 @@ export class StockChartComponent extends Component {
 			});
 
 			if (this.data.todayChangePercent !== undefined && this.data.todayChange !== undefined) {
-				const todayChangeEl = titleRow.createEl('span', {
-					text: `${formatPrice(this.data.todayChange, this.data.currency)} (${formatPercentage(this.data.todayChangePercent)}) Today`,
-					cls: this.data.todayChangePercent >= 0 ? 'stock-chart-change-positive' : 'stock-chart-change-negative'
-				});
+			const todayChangeEl = titleRow.createEl('span', {
+				text: `${formatPrice(this.data.todayChange, this.data.currency)} (${formatPercentage(this.data.todayChangePercent)}) today`,
+				cls: this.data.todayChangePercent >= 0 ? 'stock-chart-change-positive' : 'stock-chart-change-negative'
+			});
 				todayChangeEl.addClass('stock-chart-today-change');
 			}
 		} else {

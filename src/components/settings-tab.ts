@@ -23,9 +23,9 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Data source')
-			.setDesc('Stock data is fetched from Yahoo Finance api with clear error messages if unavailable')
+			.setDesc('Stock data is fetched from Yahoo Finance API with clear error messages if unavailable')
 			.addText(text => text
-				.setPlaceholder('No api key required')
+				.setPlaceholder('No API key required')
 				.setValue('Yahoo Finance (Free)')
 				.setDisabled(true));
 
@@ -228,7 +228,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		const linkCalloutEl = usageContainer.createEl('div', { cls: 'stock-callout' });
 		
 		const linkHeader = linkCalloutEl.createEl('div', { cls: 'callout-title stock-callout-title' });
-		linkHeader.createEl('span', { text: 'Tip - linkStyle property' });
+		linkHeader.createEl('span', { text: 'Tip - link style property' });
 
 		const linkContent = linkCalloutEl.createEl('div', { cls: 'callout-content stock-callout-content' });
 		

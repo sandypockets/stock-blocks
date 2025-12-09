@@ -1,6 +1,6 @@
 {
 	"name": "stock-blocks",
-	"version": "1.4.6",
+	"version": "1.4.7",
 	"description": "Display stock prices, changes, and sparkline charts in your notes with multi-stock lists and single stock charts.",
 	"main": "main.js",
 	"scripts": {

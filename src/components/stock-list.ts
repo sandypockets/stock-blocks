@@ -1,8 +1,8 @@
+import { MarkdownRenderer, Component, App } from 'obsidian';
 import { StockListBlockConfig, StockData, ChartData } from '../types';
 import { formatPrice, formatPercentage } from '../utils/formatters';
 import { createTooltip, hideTooltip } from '../utils/tooltip-utils';
 import { createInteractiveSparkline } from '../utils/sparkline-utils';
-import { MarkdownRenderer, Component, App } from 'obsidian';
 
 export class StockListComponent extends Component {
 	private container: HTMLElement;
@@ -21,7 +21,7 @@ export class StockListComponent extends Component {
 		this.container = container;
 		this.config = config;
 		this.app = app;
-		this.tooltip = createTooltip();
+		this.tooltip = createTooltip(this.container.ownerDocument);
 	}
 
 	async render(stockDataArray: StockData[]): Promise<void> {
@@ -29,7 +29,6 @@ export class StockListComponent extends Component {
 		this.lastUpdate = new Date();
 		this.sparklineChartIds = [];
 		
-		// Clear any existing event listeners when re-rendering
 		for (const { element, event, handler } of this.eventListeners) {
 			element.removeEventListener(event, handler);
 		}
@@ -76,7 +75,7 @@ export class StockListComponent extends Component {
 			priceCell.setText(formatPrice(stock.price, stock.currency));
 
 			const changeCell = row.createEl('td', { cls: 'stock-change-cell' });
-			const _changeEl = changeCell.createEl('span', {
+			changeCell.createEl('span', {
 				text: formatPercentage(stock.changePercent),
 				cls: stock.changePercent >= 0 ? 'stock-change-positive' : 'stock-change-negative'
 			});
@@ -104,26 +103,27 @@ export class StockListComponent extends Component {
 
 		if (this.config.showLastUpdate !== false) {
 			const bottomContainer = tableWrapper.createEl('div', { cls: 'stock-list-bottom-container' });
-
 			const leftSection = bottomContainer.createEl('div', { cls: 'stock-list-bottom-left' });
 			const daysText = this.config.days === 1 ? '1 day' : `${this.config.days} days`;
+
 			leftSection.createEl('span', {
 				text: `Data period: ${daysText}`,
 				cls: 'stock-list-days-info'
 			});
 
 			const rightSection = bottomContainer.createEl('div', { cls: 'stock-list-bottom-right' });
-
 			rightSection.createEl('span', {
 				text: `Last updated: ${this.lastUpdate.toLocaleTimeString()}`,
 				cls: 'stock-list-info'
 			});
 
-		const refreshBtn = rightSection.createEl('button', {
-			text: '↻ Refresh',
-			cls: 'stock-list-refresh-btn stock-list-refresh-btn-bottom'
-		});
-		this.addEventListenerTracked(refreshBtn, 'click', () => void this.refreshData());			if (this.config.refreshInterval && this.config.refreshInterval > 0) {
+			const refreshBtn = rightSection.createEl('button', {
+				text: '↻ Refresh',
+				cls: 'stock-list-refresh-btn stock-list-refresh-btn-bottom'
+			});
+			this.addEventListenerTracked(refreshBtn, 'click', () => void this.refreshData());
+
+			if (this.config.refreshInterval && this.config.refreshInterval > 0) {
 				const autoRefreshBtn = rightSection.createEl('button', {
 					text: '⏱ Auto',
 					cls: 'stock-list-auto-refresh-btn stock-list-auto-refresh-btn-bottom'
@@ -131,13 +131,13 @@ export class StockListComponent extends Component {
 				this.addEventListenerTracked(autoRefreshBtn, 'click', () => this.toggleAutoRefresh());
 			}
 		}
+
 		this.setupAutoRefresh();
 	}
 
 	private async renderSymbol(container: HTMLElement, symbol: string): Promise<void> {
 		switch (this.config.linkStyle) {
 			case 'wikilink':
-				// Use MarkdownRenderer to properly process wikilinks
 				await MarkdownRenderer.render(
 					this.app,
 					`[[${symbol}]]`,
@@ -147,7 +147,6 @@ export class StockListComponent extends Component {
 				);
 				break;
 			case 'markdown': {
-				// Create a proper HTML link
 				const link = container.createEl('a', {
 					text: symbol,
 					href: `https://finance.yahoo.com/quote/${symbol}`
@@ -164,10 +163,11 @@ export class StockListComponent extends Component {
 
 	private renderSparkline(container: HTMLElement, stock: StockData): void {
 		const color = stock.changePercent >= 0 ? '#10b981' : '#ef4444';
-		const sparklineWidth = Math.min(this.config.width, 200); // Cap at 200px for table cells
-		const sparklineHeight = Math.min(this.config.height, 40); // Cap at 40px for table cells
+		const sparklineWidth = Math.min(this.config.width, 200);
+		const sparklineHeight = Math.min(this.config.height, 40);
 
-		const { svg, chartId } = createInteractiveSparkline(
+		const result = createInteractiveSparkline(
+			container.ownerDocument,
 			stock.historicalPrices,
 			sparklineWidth,
 			sparklineHeight,
@@ -176,33 +176,18 @@ export class StockListComponent extends Component {
 			stock.timestamps
 		);
 
-		this.sparklineChartIds.push(chartId);
-		
-	// Insert SVG into container
-	container.empty();
-	const range = document.createRange();
-	range.selectNode(container);
-	const fragment = range.createContextualFragment(svg);
-	container.appendChild(fragment);		this.setupSparklineInteractions(container, chartId);
+		this.sparklineChartIds.push(result.chartId);
+		container.empty();
+		container.appendChild(result.svg);
+		this.setupSparklineInteractions(container, result.chartId, result.chartData);
 	}
 
-	private setupSparklineInteractions(container: HTMLElement, chartId: string): void {
+	private setupSparklineInteractions(container: HTMLElement, chartId: string, chartData: ChartData): void {
 		const svg = container.querySelector(`[data-chart-id="${chartId}"]`) as SVGElement;
 		const overlay = svg?.querySelector('.sparkline-overlay') as SVGRectElement;
 		const hoverDot = svg?.querySelector('.hover-dot') as SVGCircleElement;
 
 		if (!svg || !overlay || !hoverDot || !this.tooltip) return;
-
-		const chartDataAttr = svg.getAttribute('data-chart-data');
-		if (!chartDataAttr) return;
-
-		let chartData: ChartData;
-		try {
-			chartData = JSON.parse(chartDataAttr);
-		} catch (e) {
-			// Failed to parse sparkline data - fail silently
-			return;
-		}
 
 		this.addEventListenerTracked(overlay, 'mouseenter', () => {
 			hoverDot.classList.add('visible');
@@ -219,19 +204,15 @@ export class StockListComponent extends Component {
 			const rect = svg.getBoundingClientRect();
 			const mouseX = event.clientX - rect.left;
 
-			// For sparklines, find the closest data point rather than interpolating
 			const closestPoint = this.findClosestSparklinePoint(mouseX, chartData);
 			if (closestPoint && this.tooltip) {
 				hoverDot.setAttribute('cx', closestPoint.x.toString());
 				hoverDot.setAttribute('cy', closestPoint.y.toString());
 
-				// Update tooltip with price and date if timestamp is available
-				const clientX = event.clientX;
-				const clientY = event.clientY;
 				this.updateSparklineTooltip(
 					this.tooltip,
-					clientX,
-					clientY,
+					event.clientX,
+					event.clientY,
 					closestPoint.price,
 					chartData.currency,
 					closestPoint.timestamp
@@ -267,24 +248,23 @@ export class StockListComponent extends Component {
 		timestamp?: number
 	): void {
 		const formattedPrice = formatPrice(price, currency);
+		const doc = tooltip.ownerDocument;
+		const ownerWindow = doc.defaultView ?? window.activeWindow;
 
-		// Clear tooltip content
 		tooltip.textContent = '';
 
-		// Create price element
-		const priceDiv = document.createElement('div');
+		const priceDiv = doc.createElement('div');
 		priceDiv.className = 'tooltip-price';
 		priceDiv.textContent = formattedPrice;
 		tooltip.appendChild(priceDiv);
 
-		// Add date if timestamp is available
 		if (timestamp) {
 			const formattedDate = new Date(timestamp).toLocaleDateString('en-US', {
 				year: 'numeric',
 				month: 'short',
 				day: 'numeric'
 			});
-			const dateDiv = document.createElement('div');
+			const dateDiv = doc.createElement('div');
 			dateDiv.className = 'tooltip-date';
 			dateDiv.textContent = formattedDate;
 			tooltip.appendChild(dateDiv);
@@ -297,16 +277,17 @@ export class StockListComponent extends Component {
 		let left = x + 10;
 		let top = y - tooltipHeight - 10;
 
-		// Adjust if tooltip would go off screen
-		if (left + tooltipWidth > window.innerWidth) {
+		if (left + tooltipWidth > ownerWindow.innerWidth) {
 			left = x - tooltipWidth - 10;
 		}
 		if (top < 0) {
 			top = y + 10;
 		}
 
-		tooltip.style.left = `${left}px`;
-		tooltip.style.top = `${top}px`;
+		tooltip.setCssProps({
+			left: `${left}px`,
+			top: `${top}px`
+		});
 		tooltip.classList.remove('hidden');
 		tooltip.classList.add('visible');
 	}
@@ -320,7 +301,7 @@ export class StockListComponent extends Component {
 	}
 
 	private shouldShowTodayColumn(): boolean {
-		return this.config.showTodayChange === true && 
+		return this.config.showTodayChange === true &&
 			this.config.days >= 2 &&
 			this.data.some(stock => stock.todayChangePercent !== undefined);
 	}
@@ -328,36 +309,29 @@ export class StockListComponent extends Component {
 	private getChangeColumnHeader(): string {
 		if (this.shouldShowTodayColumn()) {
 			const days = this.config.days;
-			const dayText = days === 1 ? '1 day' : `${days} days`;
-			return dayText;
-		} else {
-			return 'Change';
+			return days === 1 ? '1 day' : `${days} days`;
 		}
+
+		return 'Change';
 	}
 
 	private async refreshData(): Promise<void> {
-		if (this.refreshDataCallback) {
-			try {
-				// Show loading state on refresh button
-				const refreshBtn = this.container.querySelector('.stock-list-refresh-btn') as HTMLButtonElement;
-				if (refreshBtn) {
-					refreshBtn.disabled = true;
-					refreshBtn.textContent = '⟳ Loading...';
-				}
+		if (!this.refreshDataCallback) {
+			return;
+		}
 
-				await this.refreshDataCallback();
+		const refreshBtn = this.container.querySelector('.stock-list-refresh-btn') as HTMLButtonElement;
+		if (refreshBtn) {
+			refreshBtn.disabled = true;
+			refreshBtn.textContent = '⟳ Loading...';
+		}
 
-				if (refreshBtn) {
-					refreshBtn.disabled = false;
-					refreshBtn.textContent = '↻ Refresh';
-				}
-			} catch (error) {
-				// Error refreshing data
-				const refreshBtn = this.container.querySelector('.stock-list-refresh-btn') as HTMLButtonElement;
-				if (refreshBtn) {
-					refreshBtn.disabled = false;
-					refreshBtn.textContent = '↻ Refresh';
-				}
+		try {
+			await this.refreshDataCallback();
+		} finally {
+			if (refreshBtn) {
+				refreshBtn.disabled = false;
+				refreshBtn.textContent = '↻ Refresh';
 			}
 		}
 	}
@@ -400,7 +374,6 @@ export class StockListComponent extends Component {
 		if (this.config.sortBy === column) {
 			this.config.sortOrder = this.config.sortOrder === 'asc' ? 'desc' : 'asc';
 		} else {
-			// New sort column
 			this.config.sortBy = column;
 			this.config.sortOrder = 'asc';
 		}
@@ -427,14 +400,13 @@ export class StockListComponent extends Component {
 					break;
 				case 'changePercent':
 					comparison = a.changePercent - b.changePercent;
-				break;
-			case 'todayChangePercent': {
-				// Handle undefined values for today's change
-				const aToday = a.todayChangePercent ?? 0;
-				const bToday = b.todayChangePercent ?? 0;
-				comparison = aToday - bToday;
-				break;
-			}
+					break;
+				case 'todayChangePercent': {
+					const aToday = a.todayChangePercent ?? 0;
+					const bToday = b.todayChangePercent ?? 0;
+					comparison = aToday - bToday;
+					break;
+				}
 				default:
 					return 0;
 			}
@@ -448,9 +420,7 @@ export class StockListComponent extends Component {
 			this.clearAutoRefresh();
 			this.autoRefreshInterval = window.setInterval(() => {
 				if (this.refreshDataCallback) {
-					void this.refreshDataCallback().catch((error) => {
-						console.error('Auto-refresh failed:', error);
-					});
+					void this.refreshDataCallback().catch(() => undefined);
 				}
 			}, this.config.refreshInterval * 60 * 1000);
 		}
@@ -458,7 +428,7 @@ export class StockListComponent extends Component {
 
 	private clearAutoRefresh(): void {
 		if (this.autoRefreshInterval) {
-			clearInterval(this.autoRefreshInterval);
+			window.clearInterval(this.autoRefreshInterval);
 			this.autoRefreshInterval = undefined;
 		}
 	}
@@ -471,11 +441,12 @@ export class StockListComponent extends Component {
 			this.clearAutoRefresh();
 			btn.textContent = '⏱ Auto';
 			btn.title = 'Enable auto-refresh';
-		} else {
-			this.setupAutoRefresh();
-			btn.textContent = '⏸ Auto';
-			btn.title = 'Disable auto-refresh';
+			return;
 		}
+
+		this.setupAutoRefresh();
+		btn.textContent = '⏸ Auto';
+		btn.title = 'Disable auto-refresh';
 	}
 
 	private addEventListenerTracked(element: Element, event: string, handler: EventListener): void {

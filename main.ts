@@ -7,13 +7,22 @@ import { StockBlocksSettingTab } from './src/components/settings-tab';
 import { parseStockListConfig, parseStockChartConfig } from './src/utils/config-parser';
 import { StockListBlockConfig, SingleStockBlockConfig } from './src/types';
 import { createStockDataFetcher, validators } from './src/utils/processor-helpers';
+import { getErrorMessage } from './src/utils/error-utils';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null;
+}
+
+function isPartialStockTickerSettings(value: unknown): value is Partial<StockTickerSettings> {
+	return isRecord(value);
+}
 
 export default class StockTickerPlugin extends Plugin {
 	settings: StockTickerSettings;
 	stockDataService: StockDataService;
 	private dataFetcher: ReturnType<typeof createStockDataFetcher>;
 
-	async onload() {
+	async onload(): Promise<void> {
 		await this.loadSettings();
 
 		this.stockDataService = new StockDataService(
@@ -23,8 +32,12 @@ export default class StockTickerPlugin extends Plugin {
 		);
 		this.dataFetcher = createStockDataFetcher(this.stockDataService);
 
-		this.registerMarkdownCodeBlockProcessor('stock-block-list', this.processStockList.bind(this));
-		this.registerMarkdownCodeBlockProcessor('stock-block', this.processStockChart.bind(this));
+		this.registerMarkdownCodeBlockProcessor('stock-block-list', async (source, el, ctx) => {
+			await this.processStockList(source, el, ctx);
+		});
+		this.registerMarkdownCodeBlockProcessor('stock-block', async (source, el, ctx) => {
+			await this.processStockChart(source, el, ctx);
+		});
 
 		this.addSettingTab(new StockBlocksSettingTab(this.app, this));
 
@@ -33,7 +46,6 @@ export default class StockTickerPlugin extends Plugin {
 			name: 'Refresh all stock data',
 			callback: () => {
 				this.stockDataService.clearCache();
-				// Trigger a re-render by refreshing the current file
 				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
 				if (markdownView) {
 					const currentMode = (markdownView as MarkdownView & { currentMode?: { rerender?: (force: boolean) => void } }).currentMode;
@@ -45,15 +57,15 @@ export default class StockTickerPlugin extends Plugin {
 		});
 	}
 
-	async processStockList(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) {
+	async processStockList(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<void> {
+		void ctx;
+
 		await this.processStockBlock(
 			source,
 			el,
-			ctx,
-			'stock-list',
 			parseStockListConfig,
 			validators.stockList,
-			this.dataFetcher.fetchListData.bind(this.dataFetcher),
+			async (config: StockListBlockConfig) => await this.dataFetcher.fetchListData(config),
 			(config: StockListBlockConfig) => new StockListComponent(el, config, this.app),
 			async (component: StockListComponent, config: StockListBlockConfig) => {
 				return await this.dataFetcher.createListRefreshFetcher(config)();
@@ -61,17 +73,31 @@ export default class StockTickerPlugin extends Plugin {
 		);
 	}
 
+	async processStockChart(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<void> {
+		void ctx;
+
+		await this.processStockBlock(
+			source,
+			el,
+			parseStockChartConfig,
+			validators.stockChart,
+			async (config: SingleStockBlockConfig) => await this.dataFetcher.fetchChartData(config),
+			(config: SingleStockBlockConfig) => new StockChartComponent(el, config, this.app),
+			async (component: StockChartComponent, config: SingleStockBlockConfig) => {
+				return await this.dataFetcher.createChartRefreshFetcher(config)();
+			}
+		);
+	}
+
 	private async processStockBlock<TConfig, TComponent extends Component & { render: (data: TData) => void | Promise<void> }, TData>(
 		source: string,
 		el: HTMLElement,
-		ctx: MarkdownPostProcessorContext,
-		blockType: string,
 		configParser: (source: string, settings: StockTickerSettings) => TConfig,
 		validator: (config: TConfig) => string | null,
 		dataFetcher: (config: TConfig) => Promise<TData>,
 		componentFactory: (config: TConfig) => TComponent,
 		refreshDataFetcher: (component: TComponent, config: TConfig) => Promise<TData>
-	) {
+	): Promise<void> {
 		try {
 			const config = configParser(source, this.settings);
 			
@@ -88,17 +114,16 @@ export default class StockTickerPlugin extends Plugin {
 				loadingEl.remove();
 
 				const component = componentFactory(config);
-				// Register the component with the plugin for proper cleanup
 				this.addChild(component);
 				this.setupRefreshCallback(component, config, refreshDataFetcher);
 				await component.render(data);
 
-			} catch (error) {
+			} catch (error: unknown) {
 				loadingEl.remove();
-				this.renderError(el, `error loading stock data: ${error.message || 'network error'}. Check your internet connection.`);
+				this.renderError(el, `error loading stock data: ${getErrorMessage(error, 'network error')}. Check your internet connection.`);
 			}
-		} catch (error) {
-			this.renderError(el, `error parsing configuration: ${error.message}`);
+		} catch (error: unknown) {
+			this.renderError(el, `error parsing configuration: ${getErrorMessage(error)}`);
 		}
 	}
 
@@ -113,35 +138,19 @@ export default class StockTickerPlugin extends Plugin {
 		component: TComponent,
 		config: TConfig,
 		refreshDataFetcher: (component: TComponent, config: TConfig) => Promise<TData>
-	) {
+	): void {
 		component.refreshDataCallback = async () => {
 			try {
 				this.stockDataService.clearCache();
 				const freshData = await refreshDataFetcher(component, config);
 				await component.render(freshData);
-			} catch (error) {
-				// Error refreshing data - fail silently or handle as needed
+			} catch {
+				// Refresh errors are already shown by the rendered block when data loading fails.
 			}
 		};
 	}
 
-	async processStockChart(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) {
-		await this.processStockBlock(
-			source,
-			el,
-			ctx,
-			'stock-chart',
-			parseStockChartConfig,
-			validators.stockChart,
-			this.dataFetcher.fetchChartData.bind(this.dataFetcher),
-			(config: SingleStockBlockConfig) => new StockChartComponent(el, config, this.app),
-			async (component: StockChartComponent, config: SingleStockBlockConfig) => {
-				return await this.dataFetcher.createChartRefreshFetcher(config)();
-			}
-		);
-	}
-
-	private renderError(el: HTMLElement, message: string) {
+	private renderError(el: HTMLElement, message: string): void {
 		const errorContainer = el.createEl('div', { cls: 'stock-error-container' });
 		
 		const iconEl = errorContainer.createEl('span', { cls: 'stock-error-icon' });
@@ -158,17 +167,22 @@ export default class StockTickerPlugin extends Plugin {
 		}
 	}
 
-	onunload() {
+	onunload(): void {
 		if (this.stockDataService) {
 			this.stockDataService.clearCache();
 		}
 	}
 
-	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+	async loadSettings(): Promise<void> {
+		const loadedSettings: unknown = await this.loadData();
+		this.settings = Object.assign(
+			{},
+			DEFAULT_SETTINGS,
+			isPartialStockTickerSettings(loadedSettings) ? loadedSettings : {}
+		);
 	}
 
-	async saveSettings() {
+	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
 	}
 }

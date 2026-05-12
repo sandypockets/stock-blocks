@@ -107,4 +107,12 @@ export interface ChartData {
 	width: number;
 	height: number;
 	isSinglePoint?: boolean;
+	hasTimestamps?: boolean;
+	candleWidth?: number;
+}
+
+export interface ChartRenderResult {
+	svg: SVGSVGElement;
+	chartId: string;
+	chartData: ChartData;
 }

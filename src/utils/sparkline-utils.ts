@@ -1,5 +1,6 @@
-import { formatPrice as _formatPrice } from './formatters';
-import { calculatePriceRange, calculateChartDimensions as _calculateChartDimensions } from './math-utils';
+import { ChartData, ChartRenderResult } from '../types';
+import { calculatePriceRange } from './math-utils';
+import { appendSvgElement, createSvgElement } from './svg-utils';
 
 export function createSparkline(
 	prices: number[],
@@ -10,7 +11,7 @@ export function createSparkline(
 	if (prices.length === 0) {
 		return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"></svg>`;
 	}
-	
+
 	if (prices.length === 1) {
 		const centerX = width / 2;
 		const centerY = height / 2;
@@ -22,7 +23,7 @@ export function createSparkline(
 		`.trim();
 	}
 
-	const { min, max: _max, range } = calculatePriceRange(prices);
+	const { min, range } = calculatePriceRange(prices);
 
 	const points = prices.map((price, index) => {
 		const x = (index / (prices.length - 1)) * width;
@@ -43,34 +44,53 @@ export function createSparkline(
 }
 
 export function createInteractiveSparkline(
+	doc: Document,
 	prices: number[],
 	width: number,
 	height: number,
 	strokeColor: string = '#3b82f6',
 	currency: string = 'USD',
 	timestamps?: number[]
-): { svg: string; chartId: string } {
+): ChartRenderResult {
 	const chartId = `candles-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-	
+	const svg = createSvgElement(doc, 'svg', {
+		width,
+		height,
+		viewBox: `0 0 ${width} ${height}`,
+		'data-chart-id': chartId
+	});
+
 	if (prices.length === 0) {
+		const chartData: ChartData = {
+			padding: 0,
+			chartWidth: width,
+			chartHeight: height,
+			min: 0,
+			max: 0,
+			range: 0,
+			currency,
+			width,
+			height
+		};
 		return {
-			svg: `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" data-chart-id="${chartId}"></svg>`,
-			chartId
+			svg,
+			chartId,
+			chartData
 		};
 	}
-	
+
 	if (prices.length === 1) {
 		const centerX = width / 2;
 		const centerY = height / 2;
 		const price = prices[0];
-		
-		const chartData = JSON.stringify({
+
+		const chartData: ChartData = {
 			points: [{
 				x: centerX,
 				y: centerY,
 				price: price,
 				index: 0,
-				timestamp: timestamps ? timestamps[0] : null
+				timestamp: timestamps?.[0]
 			}],
 			padding: 0,
 			chartWidth: width,
@@ -83,17 +103,37 @@ export function createInteractiveSparkline(
 			height,
 			hasTimestamps: !!timestamps,
 			isSinglePoint: true
+		};
+
+		svg.classList.add('stock-sparkline', 'interactive-sparkline');
+		appendSvgElement(svg, 'circle', {
+			cx: centerX,
+			cy: centerY,
+			r: 3,
+			fill: strokeColor,
+			stroke: 'white',
+			'stroke-width': 1
 		});
-		
+		appendSvgElement(svg, 'text', {
+			x: centerX,
+			y: centerY - 10,
+			'text-anchor': 'middle',
+			'font-size': 10,
+			fill: '#6b7280'
+		}, 'Single day');
+		appendSvgElement(svg, 'rect', {
+			x: 0,
+			y: 0,
+			width,
+			height,
+			fill: 'transparent',
+			class: 'sparkline-overlay'
+		});
+
 		return {
-			svg: `
-				<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" class="stock-sparkline interactive-sparkline" data-chart-id="${chartId}" data-chart-data='${chartData}'>
-					<circle cx="${centerX}" cy="${centerY}" r="3" fill="${strokeColor}" stroke="white" stroke-width="1" />
-					<text x="${centerX}" y="${centerY - 10}" text-anchor="middle" font-size="10" fill="#6b7280">Single day</text>
-					<rect x="0" y="0" width="${width}" height="${height}" fill="transparent" class="sparkline-overlay" style="cursor: crosshair" />
-				</svg>
-			`.trim(),
-			chartId
+			svg,
+			chartId,
+			chartData
 		};
 	}
 
@@ -102,12 +142,12 @@ export function createInteractiveSparkline(
 	const points = prices.map((price, index) => {
 		const x = (index / (prices.length - 1)) * width;
 		const y = height - ((price - min) / range) * height;
-		return { 
-			x, 
-			y, 
-			price, 
+		return {
+			x,
+			y,
+			price,
 			index,
-			timestamp: timestamps ? timestamps[index] : null
+				timestamp: timestamps?.[index]
 		};
 	});
 
@@ -124,7 +164,7 @@ export function createInteractiveSparkline(
 	});
 	const polylinePoints = polylinePointsArray.join(' ');
 
-	const chartData = JSON.stringify({
+	const chartData: ChartData = {
 		points: chartDataPoints,
 		padding: 0,
 		chartWidth: width,
@@ -137,25 +177,31 @@ export function createInteractiveSparkline(
 		height,
 		hasTimestamps: !!timestamps,
 		isSinglePoint: false
+	};
+
+	svg.classList.add('stock-sparkline', 'interactive-sparkline');
+	appendSvgElement(svg, 'polyline', {
+		fill: 'none',
+		stroke: strokeColor,
+		'stroke-width': 1.5,
+		points: polylinePoints,
+		class: 'sparkline-line'
+	});
+	appendSvgElement(svg, 'circle', {
+		r: 3,
+		fill: strokeColor,
+		stroke: 'white',
+		'stroke-width': 1,
+		class: 'hover-dot'
+	});
+	appendSvgElement(svg, 'rect', {
+		x: 0,
+		y: 0,
+		width,
+		height,
+		fill: 'transparent',
+		class: 'sparkline-overlay'
 	});
 
-	const svg = `
-		<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" class="stock-sparkline interactive-sparkline" data-chart-id="${chartId}" data-chart-data='${chartData}'>
-			<polyline
-				fill="none"
-				stroke="${strokeColor}"
-				stroke-width="1.5"
-				points="${polylinePoints}"
-				class="sparkline-line"
-			/>
-			
-			<circle r="3" fill="${strokeColor}" stroke="white" stroke-width="1" 
-					class="hover-dot" style="opacity: 0" />
-			
-			<rect x="0" y="0" width="${width}" height="${height}" 
-				  fill="transparent" class="sparkline-overlay" style="cursor: crosshair" />
-		</svg>
-	`.trim();
-
-	return { svg, chartId };
+	return { svg, chartId, chartData };
 }

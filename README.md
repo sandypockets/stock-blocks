@@ -28,8 +28,8 @@ To learn how to set up each of those components, see the **Usage Examples** sect
 
 We prioritize security and transparency in this plugin:
 - Zero Dependencies - No third-party libraries means a smaller attack surface and easier security auditing
-- Immutable Releases - Every release is automatically built and cryptographically signed with SHA256 checksums
-- Verifiable Downloads - Each release includes SHA256SUMS file for integrity verification
+- Immutable Releases - Every release is automatically built by GitHub Actions and published as an immutable GitHub release
+- Verifiable Downloads - Each release lists SHA256 checksums in the release notes for integrity verification
 - Transparent Build Process - All releases are built via automated GitHub Actions - no manual compilation or uploads
 - Open Source - Full source code available for security review and auditing
 
@@ -48,7 +48,7 @@ After downloading the plugin files from a release, you can verify their integrit
 sha256sum main.js manifest.json styles.css
 ```
 
-Those commands will output a SHA256 checksum for each file. You can then compare those checksums against the values listed in the `SHA256SUMS` file included in the release, which you can view directly in the release notes.
+Those commands will output a SHA256 checksum for each file. You can then compare those checksums against the values listed directly in the release notes.
 
 ## Features
 

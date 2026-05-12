@@ -75,7 +75,7 @@ When reviewing PRs, examine these in priority order:
 - `manifest.json` version follows SemVer (**no leading `v`**)
 - `versions.json` updated with matching entry
 - Version bump scripts (`version-bump.mjs`, `update-version.mjs`) handle automation correctly
-- **Required release assets**: `main.js`, `manifest.json`, `styles.css`, `SHA256SUMS` (security verification)
+- **Required release assets**: `main.js`, `manifest.json`, `styles.css` only (Obsidian-supported assets)
 - **Never change**: `id: "stock-blocks"` in manifest (breaks existing installations)
 
 ### 6) Stock Blocks Documentation & UX
@@ -97,7 +97,7 @@ When reviewing PRs, examine these in priority order:
 - **No PII collection**: Never send vault contents, filenames, or user data
 - **Data scope**: Only stock symbols and requested date ranges sent to Yahoo Finance
 - **Opt-in principle**: Any new external services require settings toggle + README disclosure
-- **Integrity verification**: SHA256 checksums for all releases (already implemented)
+- **Integrity verification**: SHA256 checksums belong in release notes, not as extra release assets
 
 ### 8) Performance (Stock Blocks specific)
 **Startup Performance:**

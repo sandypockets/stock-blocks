@@ -1,10 +1,5 @@
 name: Release Obsidian Plugin
 
-# Add permissions for the workflow
-permissions:
-  contents: write
-  pull-requests: read
-
 on:
   push:
     branches:
@@ -16,6 +11,8 @@ on:
 jobs:
   check-version:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
       should-release: ${{ steps.version.outputs.should-release }}
@@ -76,6 +73,11 @@ jobs:
     needs: check-version
     if: needs.check-version.outputs.should-release == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -119,12 +121,20 @@ jobs:
           echo "✅ Build verification passed"
           echo "📦 Built plugin version: $PACKAGE_VERSION"
 
+      - name: Create build provenance attestation
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            ./main.js
+            ./manifest.json
+            ./styles.css
+
       - name: Create release notes
         id: release-notes
         run: |
           VERSION="${{ needs.check-version.outputs.version }}"
           
-          # Generate SHA256 checksums for all release assets
+          # Generate SHA256 checksums for Obsidian-supported release assets
           MAIN_SHA=$(sha256sum main.js | cut -d' ' -f1)
           MANIFEST_SHA=$(sha256sum manifest.json | cut -d' ' -f1)
           STYLES_SHA=$(sha256sum styles.css | cut -d' ' -f1)
@@ -145,13 +155,8 @@ jobs:
           \`\`\`bash
           sha256sum main.js manifest.json styles.css
           \`\`\`
-          EOF
-          
-          # Also create a separate checksums file
-          cat > SHA256SUMS << EOF
-          $MAIN_SHA  main.js
-          $MANIFEST_SHA  manifest.json
-          $STYLES_SHA  styles.css
+
+          This release is built by GitHub Actions and includes GitHub artifact attestations for the release assets.
           EOF
 
       - name: Create Release
@@ -159,20 +164,25 @@ jobs:
         run: |
           VERSION="${{ needs.check-version.outputs.version }}"
           
-          # Create release using GitHub CLI
+          # Create the release as a draft, attach all assets, then publish it.
+          # This lets GitHub generate an immutable-release attestation after
+          # the complete Obsidian-supported asset set is present.
           gh release create "$VERSION" \
+            --draft \
             --title "$VERSION" \
+            --target "$GITHUB_SHA" \
             --notes-file release-notes.md \
             ./main.js \
             ./manifest.json \
-            ./styles.css \
-            ./SHA256SUMS
+            ./styles.css
+
+          gh release edit "$VERSION" --draft=false
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release completed
         run: |
           echo "🎉 Release ${{ needs.check-version.outputs.version }} created successfully!"
-          echo "📦 Assets uploaded: main.js, manifest.json, styles.css, SHA256SUMS"
-          echo "🔐 SHA256 checksums included for security verification"
+          echo "📦 Assets uploaded: main.js, manifest.json, styles.css"
+          echo "🔐 SHA256 checksums included in release notes"
           echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ needs.check-version.outputs.version }}"

@@ -15,7 +15,9 @@ This repository uses GitHub Actions to automatically create releases when the pl
    - `manifest.json` (plugin metadata)
    - `styles.css` (plugin styles)
 
-4. Release Notes: Automatic generation of release notes with installation instructions.
+4. Release Notes: Automatic generation of release notes with SHA256 checksums and verification instructions.
+
+5. Attestations: Release assets receive GitHub artifact attestations, and immutable releases receive GitHub release attestations after publication.
 
 ### Validation Workflow
 
@@ -107,6 +109,7 @@ This method:
 4. Build Process - Installs dependencies, runs linting, and builds the plugin
 5. Release Creation - Creates a GitHub release with proper assets
 6. Asset Upload - Uploads `main.js`, `manifest.json`, and `styles.css`
+7. Release Publication - Publishes the draft release after the complete asset set is attached
 
 ### Safety Features
 
@@ -114,6 +117,7 @@ This method:
 - Duplicate Release Prevention - Won't create a release if the version already exists as a tag
 - Build Validation - Ensures the plugin builds successfully before creating a release
 - Asset Verification - Confirms all required files are present and non-empty
+- Obsidian Asset Compatibility - Publishes only `main.js`, `manifest.json`, and `styles.css` as release assets
 
 ### Monitoring Releases
 

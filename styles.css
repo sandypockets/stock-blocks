@@ -1,5 +1,5 @@
 :root {
-	--text-error: #fff;
+	--text-error: #ffffff;
 	--background-modifier-error: #fee2e2;
 	--background-modifier-error-border: #fca5a5;
 	--color-red: #dc2626;
@@ -11,10 +11,6 @@
 .stock-list-container {
 	margin: 0.5rem 0;
 	font-family: var(--font-interface);
-}
-
-.stock-list-header {
-	margin-bottom: 0.5rem;
 }
 
 .stock-list-info {
@@ -388,8 +384,10 @@
 }
 
 .stock-blocks-usage h4 {
-	margin: 1rem 0 0.5rem 0;
+	margin: 1.5rem 0 0.5rem 0;
 	color: var(--text-normal);
+	font-size: 1rem;
+	font-weight: 600;
 }
 
 .stock-blocks-usage pre {
@@ -471,7 +469,7 @@ p.stock-list-description {
 	color: var(--text-on-accent);
 	border: none;
 	border-radius: 4px;
-	height: 20px;	
+	height: 20px;
 	font-size: 11px;
 	cursor: pointer;
 	transition: all 0.2s ease;
@@ -555,7 +553,7 @@ p.stock-list-description {
 }
 
 .stock-error-message {
-	color: #fff;
+	color: #ffffff;
 	font-weight: 600;
 	text-align: center;
 	font-size: 1rem;
@@ -629,37 +627,29 @@ p.stock-list-description {
 	color: var(--text-muted);
 }
 
-.stock-blocks-usage h4 {
-	margin-top: 1.5rem;
-	margin-bottom: 0.5rem;
-	color: var(--text-normal);
-	font-size: 1rem;
-	font-weight: 600;
-}
-
 .stock-example-container {
 	position: relative;
 	margin-bottom: 1rem;
 }
 
-.stock-example-code {
-	font-family: var(--font-monospace) !important;
-	font-size: 13px !important;
-	background: var(--background-secondary) !important;
-	border: 1px solid var(--background-modifier-border) !important;
-	border-radius: 6px !important;
-	padding: 12px !important;
-	width: 100% !important;
-	resize: none !important;
-	color: var(--text-normal) !important;
+.stock-blocks-usage textarea.stock-example-code {
+	font-family: var(--font-monospace);
+	font-size: 13px;
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 12px;
+	width: 100%;
+	resize: none;
+	color: var(--text-normal);
 	box-sizing: border-box;
 	line-height: 1.4;
 	transition: border-color 0.2s ease;
 }
 
-.stock-example-code:focus {
+.stock-blocks-usage textarea.stock-example-code:focus {
 	outline: none;
-	border-color: var(--interactive-accent) !important;
+	border-color: var(--interactive-accent);
 	box-shadow: 0 0 0 2px var(--interactive-accent-hover);
 }
 
@@ -684,44 +674,44 @@ p.stock-list-description {
 	transform: translateY(0);
 }
 
-.stock-blocks-usage-header {
-	font-size: 1.5rem !important;
-	font-weight: bold !important;
-	margin-top: 2rem !important;
-	margin-bottom: 1rem !important;
-	color: var(--text-normal) !important;
+.stock-blocks-usage .stock-blocks-usage-header {
+	font-size: 1.5rem;
+	font-weight: bold;
+	margin-top: 2rem;
+	margin-bottom: 1rem;
+	color: var(--text-normal);
 }
 
-.stock-callout {
-	background: var(--background-secondary) !important;
-	border: 1px solid var(--background-modifier-border) !important;
-	border-left: 4px solid var(--text-accent) !important;
-	border-radius: 4px !important;
-	padding: 12px 16px !important;
-	margin: 12px 0 !important;
-	font-size: 14px !important;
-	line-height: 1.4 !important;
+.stock-blocks-usage .stock-callout {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-left: 4px solid var(--text-accent);
+	border-radius: 4px;
+	padding: 12px 16px;
+	margin: 12px 0;
+	font-size: 14px;
+	line-height: 1.4;
 }
 
-.stock-callout-title {
-	font-weight: bold !important;
-	color: var(--text-accent) !important;
-	margin-bottom: 4px !important;
-	display: flex !important;
-	align-items: center !important;
-	gap: 6px !important;
+.stock-blocks-usage .stock-callout .stock-callout-title {
+	font-weight: bold;
+	color: var(--text-accent);
+	margin-bottom: 4px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
 }
 
-.stock-callout-content {
-	color: var(--text-normal) !important;
+.stock-blocks-usage .stock-callout .stock-callout-content {
+	color: var(--text-normal);
 }
 
-.stock-callout-list {
-	margin-top: 10px !important;
-	list-style-type: none !important;
-	padding-left: 0 !important;
+.stock-blocks-usage .stock-callout-list {
+	margin-top: 10px;
+	list-style-type: none;
+	padding-left: 0;
 }
 
-.stock-callout-list li {
-	margin-bottom: 5px !important;
+.stock-blocks-usage .stock-callout-list li {
+	margin-bottom: 5px;
 }

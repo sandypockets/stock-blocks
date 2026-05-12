@@ -1,21 +1,28 @@
 import { StockDataService } from '../services/stock-data';
-import { StockListBlockConfig, SingleStockBlockConfig } from '../types';
+import { StockData, StockListBlockConfig, SingleStockBlockConfig } from '../types';
 
-export function createStockDataFetcher(stockDataService: StockDataService) {
+interface StockDataFetcher {
+	fetchListData(config: StockListBlockConfig): Promise<StockData[]>;
+	fetchChartData(config: SingleStockBlockConfig): Promise<StockData>;
+	createListRefreshFetcher(config: StockListBlockConfig): () => Promise<StockData[]>;
+	createChartRefreshFetcher(config: SingleStockBlockConfig): () => Promise<StockData>;
+}
+
+export function createStockDataFetcher(stockDataService: StockDataService): StockDataFetcher {
 	return {
-		async fetchListData(config: StockListBlockConfig) {
+		async fetchListData(config: StockListBlockConfig): Promise<StockData[]> {
 			const stockDataPromises = config.tickers.map((ticker: string) => 
 				stockDataService.getStockData(ticker.trim(), config.days)
 			);
 			return Promise.all(stockDataPromises);
 		},
 
-		async fetchChartData(config: SingleStockBlockConfig) {
+		async fetchChartData(config: SingleStockBlockConfig): Promise<StockData> {
 			return stockDataService.getStockData(config.symbol, config.days, config.useCandles);
 		},
 
-		createListRefreshFetcher(config: StockListBlockConfig) {
-			return async () => {
+		createListRefreshFetcher(config: StockListBlockConfig): () => Promise<StockData[]> {
+			return async (): Promise<StockData[]> => {
 				stockDataService.clearCache();
 				const freshDataPromises = config.tickers.map((ticker: string) => 
 					stockDataService.getStockData(ticker.trim(), config.days)
@@ -24,8 +31,8 @@ export function createStockDataFetcher(stockDataService: StockDataService) {
 			};
 		},
 
-		createChartRefreshFetcher(config: SingleStockBlockConfig) {
-			return async () => {
+		createChartRefreshFetcher(config: SingleStockBlockConfig): () => Promise<StockData> {
+			return async (): Promise<StockData> => {
 				stockDataService.clearCache();
 				return stockDataService.getStockData(config.symbol, config.days, config.useCandles);
 			};

@@ -23,11 +23,13 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Data source')
-			.setDesc('Stock data is fetched from Yahoo Finance API with clear error messages if unavailable')
-			.addText(text => text
-				.setPlaceholder('No API key required')
-				.setValue('Yahoo Finance (Free)')
-				.setDisabled(true));
+				.setDesc('Stock data is fetched from Yahoo Finance API with clear error messages if unavailable')
+				.addText(text => {
+					text
+						.setPlaceholder('No API key required')
+						.setValue('Yahoo Finance (Free)');
+					text.inputEl.readOnly = true;
+				});
 
 		new Setting(containerEl)
 			.setName('Default days')
@@ -86,9 +88,9 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 						this.plugin.stockDataService.clearCache();
 						new Notice('Stock data cache cleared');
 						this.display();
-					} catch (error) {
-						new Notice('Error clearing cache');
-					}
+						} catch {
+							new Notice('Error clearing cache');
+						}
 				}));
 
 		new Setting(containerEl)
@@ -276,15 +278,14 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 				try {
 					await navigator.clipboard.writeText(codeText);
 					copyButton.textContent = 'Copied!';
-					setTimeout(() => {
-						copyButton.textContent = 'Copy';
-					}, 2000);
-				} catch (err) {
-					new Notice('Failed to copy to clipboard');
-					console.error('Clipboard copy failed:', err);
-				}
-			})();
-		});
+						window.setTimeout(() => {
+							copyButton.textContent = 'Copy';
+						}, 2000);
+					} catch {
+						new Notice('Failed to copy to clipboard');
+					}
+				})();
+			});
 
 		textArea.addEventListener('click', () => {
 			textArea.select();

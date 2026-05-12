@@ -1,6 +1,7 @@
 import { StockData, CacheEntry, OHLCData } from '../types';
 import { requestUrl } from 'obsidian';
 import { calculateOptimalDateRange } from '../utils/date-utils';
+import { getErrorMessage } from '../utils/error-utils';
 
 interface MemorySizes {
 	mapEntry: number;
@@ -11,15 +12,88 @@ interface MemorySizes {
 	charBytes: number;
 }
 
+interface YahooQuote {
+	close: unknown[];
+	open?: unknown[];
+	high?: unknown[];
+	low?: unknown[];
+}
+
+interface YahooChartResult {
+	meta?: {
+		currency?: string;
+	};
+	timestamp: number[];
+	indicators: {
+		quote: YahooQuote[];
+	};
+}
+
+interface YahooChartResponse {
+	chart: {
+		result: YahooChartResult[];
+	};
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null;
+}
+
+function isNumberArray(value: unknown): value is number[] {
+	return Array.isArray(value) && value.every(item => typeof item === 'number');
+}
+
+function isYahooQuote(value: unknown): value is YahooQuote {
+	if (!isRecord(value) || !Array.isArray(value.close)) {
+		return false;
+	}
+
+	return (value.open === undefined || Array.isArray(value.open)) &&
+		(value.high === undefined || Array.isArray(value.high)) &&
+		(value.low === undefined || Array.isArray(value.low));
+}
+
+function isYahooChartResult(value: unknown): value is YahooChartResult {
+	if (!isRecord(value) || !isNumberArray(value.timestamp) || !isRecord(value.indicators)) {
+		return false;
+	}
+
+	const quote = value.indicators.quote;
+	if (!Array.isArray(quote) || !quote.every(isYahooQuote)) {
+		return false;
+	}
+
+	if (value.meta !== undefined) {
+		if (!isRecord(value.meta)) {
+			return false;
+		}
+
+		const currency = value.meta.currency;
+		if (currency !== undefined && typeof currency !== 'string') {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+function isYahooChartResponse(value: unknown): value is YahooChartResponse {
+	if (!isRecord(value) || !isRecord(value.chart) || !Array.isArray(value.chart.result)) {
+		return false;
+	}
+
+	return value.chart.result.every(isYahooChartResult);
+}
+
 function isValidPrice(price: unknown): price is number {
-	return price != null && !isNaN(price as number);
+	return price != null && Number.isFinite(Number(price));
 }
 
 function createOHLCData(open: unknown, high: unknown, low: unknown, close: unknown): OHLCData | null {
 	if (!isValidPrice(open) || !isValidPrice(high) || !isValidPrice(low) || !isValidPrice(close)) {
 		return null;
 	}
-	
+
 	return {
 		open: Number(open),
 		high: Number(high),
@@ -33,7 +107,7 @@ export class StockDataService {
 	private cacheDuration: number;
 	private useBusinessDays: boolean;
 	private minDataPoints: number;
-	
+
 	constructor(
 		cacheDurationMinutes: number = 5,
 		useBusinessDays: boolean = true,
@@ -43,34 +117,34 @@ export class StockDataService {
 		this.useBusinessDays = useBusinessDays;
 		this.minDataPoints = minDataPoints;
 	}
-	
+
 	async getStockData(symbol: string, days: number = 30, includeOHLC: boolean = false): Promise<StockData> {
 		const cacheKey = `${symbol}-${days}-${this.useBusinessDays}-${includeOHLC}`;
 		const cached = this.cache.get(cacheKey);
-		
+
 		if (cached && Date.now() - cached.timestamp < this.cacheDuration) {
 			return cached.data;
 		}
-		
+
 		try {
 			const data = await this.fetchRealStockData(symbol, days, includeOHLC);
 			this.cache.set(cacheKey, {
 				data,
 				timestamp: Date.now()
 			});
-			
+
 			return data;
-		} catch (error) {
-			// Re-throw the error so the UI can show the Yahoo Finance failure
-			throw new Error(`Yahoo Finance API failed for ${symbol}: ${error.message || 'Network or API error'}`);
+			} catch (error: unknown) {
+				// Re-throw the error so the UI can show the Yahoo Finance failure
+				throw new Error(`Yahoo Finance API failed for ${symbol}: ${getErrorMessage(error, 'Network or API error')}`);
+			}
 		}
-	}
-	
+
 	private async fetchRealStockData(symbol: string, days: number, includeOHLC: boolean = false): Promise<StockData> {
 		const cleanSymbol = symbol.toUpperCase().trim();
 		const dateRange = calculateOptimalDateRange(days, this.useBusinessDays);
 		const url = `https://query1.finance.yahoo.com/v8/finance/chart/${cleanSymbol}?period1=${dateRange.startDate}&period2=${dateRange.endDate}&interval=1d`;
-		
+
 		const response = await requestUrl({
 			url: url,
 			method: 'GET',
@@ -78,61 +152,62 @@ export class StockDataService {
 				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
 			}
 		});
-		
-		if (!response.json || !response.json.chart || !response.json.chart.result) {
-			throw new Error('Invalid response format from Yahoo Finance');
-		}
-		
-		const result = response.json.chart.result[0];
-		if (!result || !result.timestamp || !result.indicators?.quote?.[0]) {
-			throw new Error(`No data found for symbol ${cleanSymbol}`);
-		}
-		
-		const timestamps = result.timestamp;
-		const quotes = result.indicators.quote[0];
-		const closePrices = quotes.close;
-		const openPrices = quotes.open;
-		const highPrices = quotes.high;
+
+			const responseJson: unknown = response.json;
+			if (!isYahooChartResponse(responseJson)) {
+				throw new Error('Invalid response format from Yahoo Finance');
+			}
+
+			const result = responseJson.chart.result[0];
+			const quotes = result?.indicators.quote[0];
+			if (!result || !quotes) {
+				throw new Error(`No data found for symbol ${cleanSymbol}`);
+			}
+
+			const timestamps = result.timestamp;
+			const closePrices = quotes.close;
+			const openPrices = quotes.open;
+			const highPrices = quotes.high;
 		const lowPrices = quotes.low;
-		
+
 		const validData: { timestamp: number; price: number; ohlc?: OHLCData }[] = [];
-		
+
 		for (let i = 0; i < timestamps.length; i++) {
 			// Skip if close price is invalid (primary requirement)
 			if (!isValidPrice(closePrices[i])) {
 				continue;
 			}
-			
+
 			const dataPoint: { timestamp: number; price: number; ohlc?: OHLCData } = {
 				timestamp: timestamps[i] * 1000, // Convert to milliseconds
 				price: Number(closePrices[i])
 			};
-			
+
 			if (includeOHLC) {
 				const ohlc = createOHLCData(
 					openPrices?.[i],
-					highPrices?.[i], 
+					highPrices?.[i],
 					lowPrices?.[i],
 					closePrices[i]
 				);
-				
+
 				if (ohlc) {
 					dataPoint.ohlc = ohlc;
 				}
 			}
-			
+
 			validData.push(dataPoint);
 		}
-		
+
 		if (validData.length === 0) {
 			throw new Error(`No valid price data found for ${cleanSymbol}`);
 		}
-		
+
 		validData.sort((a, b) => a.timestamp - b.timestamp);
-		
+
 		// For small datasets (like 1-day requests), be more selective about deduplication
 		let finalData = validData;
-		
+
 		// Only deduplicate if we have many data points, to avoid losing necessary chart data
 		if (validData.length > days * 2) {
 			// Deduplicate data points from the same calendar date (keep the latest price for each day)
@@ -140,26 +215,26 @@ export class StockDataService {
 			for (const dataPoint of validData) {
 				const date = new Date(dataPoint.timestamp);
 				const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-				
+
 				// Keep the latest data point for each day (or overwrite with later timestamp)
 				if (!dailyData.has(dateKey) || dataPoint.timestamp > dailyData.get(dateKey)!.timestamp) {
 					dailyData.set(dateKey, dataPoint);
 				}
 			}
-			
+
 			// Convert back to array and sort by timestamp
 			finalData = Array.from(dailyData.values()).sort((a, b) => a.timestamp - b.timestamp);
 		}
-		
+
 		// Ensure we have at least 2 data points for charting
 		if (finalData.length < 2 && validData.length >= 2) {
 			// If deduplication left us with too few points, use the original data
 			finalData = validData;
 		}
-		
+
 		const historicalPrices = finalData.map(d => d.price);
 		const timestampsMs = finalData.map(d => d.timestamp);
-		
+
 		let ohlcData: OHLCData[] | undefined;
 		if (includeOHLC) {
 			ohlcData = [];
@@ -173,14 +248,14 @@ export class StockDataService {
 				ohlcData = undefined;
 			}
 		}
-		
+
 		const latestPrice = historicalPrices[historicalPrices.length - 1];
 		// Calculate change over the entire period (first day vs last day)
 		const firstPrice = historicalPrices[0];
-		
+
 		const change = latestPrice - firstPrice;
 		const changePercent = firstPrice !== 0 ? (change / firstPrice) * 100 : 0;
-		
+
 		// Calculate today's change if we have multiple days of data
 		let todayChange: number | undefined;
 		let todayChangePercent: number | undefined;
@@ -188,24 +263,15 @@ export class StockDataService {
 		if (days >= 2 && finalData.length >= 2) {
 			const todayPrice = finalData[finalData.length - 1].price;
 			const previousDayPrice = finalData[finalData.length - 2].price;
-			
+
 			todayChange = Number((todayPrice - previousDayPrice).toFixed(2));
-			todayChangePercent = previousDayPrice !== 0 
-				? Number(((todayChange / previousDayPrice) * 100).toFixed(2)) 
+			todayChangePercent = previousDayPrice !== 0
+				? Number(((todayChange / previousDayPrice) * 100).toFixed(2))
 				: 0;
 		}
 
-		// Try to get currency from the meta data
-		let currency = 'USD'; // Default to USD
-		try {
-			if (result.meta && result.meta.currency) {
-				currency = result.meta.currency;
-			}
-		} catch (e) {
-			// If currency detection fails, use symbol-based logic
-			currency = this.detectCurrencyFromSymbol(cleanSymbol);
-		}
-		
+			const currency = result.meta?.currency ?? this.detectCurrencyFromSymbol(cleanSymbol);
+
 		const stockData: StockData = {
 			symbol: cleanSymbol,
 			price: Number(latestPrice.toFixed(2)),
@@ -217,15 +283,15 @@ export class StockDataService {
 			historicalPrices,
 			timestamps: timestampsMs
 		};
-		
+
 		// Add OHLC data if it was requested and available
 		if (includeOHLC && ohlcData && ohlcData.length > 0) {
 			stockData.ohlcData = ohlcData;
 		}
-		
+
 		return stockData;
 	}
-	
+
 	private detectCurrencyFromSymbol(symbol: string): string {
 		if (symbol.endsWith('.TO') || symbol.endsWith('.V')) {
 			return 'CAD'; // Toronto Stock Exchange
@@ -248,11 +314,11 @@ export class StockDataService {
 		// For common North American symbols without suffix, assume USD
 		return 'USD';
 	}
-	
+
 	clearCache(): void {
 		this.cache.clear();
 	}
-	
+
 	getCacheSize(): number {
 		return this.cache.size;
 	}
@@ -266,45 +332,45 @@ export class StockDataService {
 			number: 8,
 			charBytes: 2
 		};
-		
+
 		let totalBytes = sizes.array; // Map itself
-		
+
 		for (const [cacheKey, cacheEntry] of this.cache.entries()) {
 			totalBytes += this.calculateEntrySize(cacheKey, cacheEntry, sizes);
 		}
-		
+
 		return this.formatBytes(totalBytes);
 	}
 
 	private calculateEntrySize(cacheKey: string, cacheEntry: CacheEntry, sizes: MemorySizes): number {
 		let entryBytes = sizes.mapEntry + sizes.object; // Map entry + CacheEntry object
-		
+
 		entryBytes += this.calculateStringSize(cacheKey, sizes);
 		entryBytes += sizes.number; // timestamp
-		
+
 		entryBytes += this.calculateStockDataSize(cacheEntry.data, sizes);
-		
+
 		return entryBytes;
 	}
 
 	private calculateStockDataSize(stockData: StockData, sizes: MemorySizes): number {
 		let dataBytes = sizes.object; // StockData object
-		
+
 		dataBytes += this.calculateStringSize(stockData.symbol, sizes);
 		dataBytes += this.calculateStringSize(stockData.currency, sizes);
-		
+
 		dataBytes += sizes.number * 3; // price, change, changePercent
-		
+
 		if (stockData.todayChange !== undefined) dataBytes += sizes.number;
 		if (stockData.todayChangePercent !== undefined) dataBytes += sizes.number;
-		
+
 		dataBytes += this.calculateArraySize(stockData.historicalPrices, sizes);
 		dataBytes += this.calculateArraySize(stockData.timestamps, sizes);
-		
+
 		if (stockData.ohlcData) {
 			dataBytes += this.calculateOhlcArraySize(stockData.ohlcData, sizes);
 		}
-		
+
 		return dataBytes;
 	}
 
@@ -324,7 +390,7 @@ export class StockDataService {
 	private formatBytes(bytes: number): string {
 		const kilobyte = 1024;
 		const megabyte = kilobyte * 1024;
-		
+
 		if (bytes < kilobyte) {
 			return `${bytes} B`;
 		} else if (bytes < megabyte) {
@@ -333,17 +399,17 @@ export class StockDataService {
 			return `${(bytes / megabyte).toFixed(1)} MB`;
 		}
 	}
-	
+
 	setCacheDuration(minutes: number): void {
 		this.cacheDuration = minutes * 60 * 1000;
 	}
-	
+
 	setUseBusinessDays(useBusinessDays: boolean): void {
 		this.useBusinessDays = useBusinessDays;
 		// Clear cache when settings change to ensure fresh data
 		this.clearCache();
 	}
-	
+
 	setMinDataPoints(minDataPoints: number): void {
 		this.minDataPoints = Math.max(2, minDataPoints);
 		// Clear cache when settings change to ensure fresh data

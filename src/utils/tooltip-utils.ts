@@ -1,6 +1,7 @@
 import { formatPrice } from './formatters';
 
 function positionTooltip(tooltip: HTMLElement, x: number, y: number): void {
+	const ownerWindow = tooltip.ownerDocument.defaultView ?? window.activeWindow;
 	const rect = tooltip.getBoundingClientRect();
 	const tooltipWidth = rect.width || 80;
 	const tooltipHeight = rect.height || 30;
@@ -8,7 +9,7 @@ function positionTooltip(tooltip: HTMLElement, x: number, y: number): void {
 	let left = x + 15;
 	let top = y - tooltipHeight - 15;
 
-	if (left + tooltipWidth > window.innerWidth - 10) {
+	if (left + tooltipWidth > ownerWindow.innerWidth - 10) {
 		left = x - tooltipWidth - 15;
 	}
 	
@@ -16,21 +17,23 @@ function positionTooltip(tooltip: HTMLElement, x: number, y: number): void {
 		top = y + 15;
 	}
 	
-	if (top + tooltipHeight > window.innerHeight - 10) {
-		top = window.innerHeight - tooltipHeight - 10;
+	if (top + tooltipHeight > ownerWindow.innerHeight - 10) {
+		top = ownerWindow.innerHeight - tooltipHeight - 10;
 	}
 
-	tooltip.style.left = `${left}px`;
-	tooltip.style.top = `${top}px`;
+	tooltip.setCssProps({
+		left: `${left}px`,
+		top: `${top}px`
+	});
 	tooltip.classList.remove('hidden');
 	tooltip.classList.add('visible');
 }
 
-export function createTooltip(): HTMLElement {
-	const tooltip = document.createElement('div');
+export function createTooltip(doc: Document = window.activeDocument): HTMLElement {
+	const tooltip = doc.createElement('div');
 	tooltip.className = 'stock-chart-tooltip hidden';
 	
-	document.body.appendChild(tooltip);
+	doc.body.appendChild(tooltip);
 	return tooltip;
 }
 
@@ -53,13 +56,14 @@ export function updateTooltip(
 	});
 
 	tooltip.textContent = '';
+	const doc = tooltip.ownerDocument;
 	
-	const priceDiv = document.createElement('div');
+	const priceDiv = doc.createElement('div');
 	priceDiv.className = 'tooltip-price';
 	priceDiv.textContent = formattedPrice;
 	tooltip.appendChild(priceDiv);
 	
-	const dateDiv = document.createElement('div');
+	const dateDiv = doc.createElement('div');
 	dateDiv.className = 'tooltip-date';
 	dateDiv.textContent = formattedDate;
 	tooltip.appendChild(dateDiv);
@@ -83,31 +87,32 @@ export function updateCandlestickTooltip(
 	});
 
 	tooltip.textContent = '';
+	const doc = tooltip.ownerDocument;
 	
-	const dateDiv = document.createElement('div');
+	const dateDiv = doc.createElement('div');
 	dateDiv.className = 'tooltip-date';
 	dateDiv.textContent = formattedDate;
 	tooltip.appendChild(dateDiv);
 	
-	const ohlcDiv = document.createElement('div');
+	const ohlcDiv = doc.createElement('div');
 	ohlcDiv.className = 'tooltip-ohlc';
 	
-	const openRow = document.createElement('div');
+	const openRow = doc.createElement('div');
 	openRow.className = 'ohlc-row';
 	openRow.textContent = `O: ${formatPrice(ohlc.open, currency)}`;
 	ohlcDiv.appendChild(openRow);
 	
-	const highRow = document.createElement('div');
+	const highRow = doc.createElement('div');
 	highRow.className = 'ohlc-row';
 	highRow.textContent = `H: ${formatPrice(ohlc.high, currency)}`;
 	ohlcDiv.appendChild(highRow);
 	
-	const lowRow = document.createElement('div');
+	const lowRow = doc.createElement('div');
 	lowRow.className = 'ohlc-row';
 	lowRow.textContent = `L: ${formatPrice(ohlc.low, currency)}`;
 	ohlcDiv.appendChild(lowRow);
 	
-	const closeRow = document.createElement('div');
+	const closeRow = doc.createElement('div');
 	closeRow.className = 'ohlc-row';
 	closeRow.textContent = `C: ${formatPrice(ohlc.close, currency)}`;
 	ohlcDiv.appendChild(closeRow);

@@ -17,6 +17,10 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 	}
 
 	display(): void {
+		this.renderSettings();
+	}
+
+	private renderSettings(): void {
 		const { containerEl } = this;
 
 		containerEl.empty();
@@ -87,10 +91,10 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 					try {
 						this.plugin.stockDataService.clearCache();
 						new Notice('Stock data cache cleared');
-						this.display();
-						} catch {
-							new Notice('Error clearing cache');
-						}
+						this.renderSettings();
+					} catch {
+						new Notice('Error clearing cache');
+					}
 				}));
 
 		new Setting(containerEl)

@@ -4,6 +4,11 @@ import { formatPrice, formatPercentage } from '../utils/formatters';
 import { createTooltip, hideTooltip } from '../utils/tooltip-utils';
 import { createInteractiveSparkline } from '../utils/sparkline-utils';
 import { getErrorMessage } from '../utils/error-utils';
+import { normalizeUniqueTickers } from '../utils/ticker-utils';
+
+type StockListDisplayRow =
+	| { type: 'stock'; stock: StockData }
+	| { type: 'error'; error: StockDataError };
 
 export class StockListComponent extends Component {
 	private container: HTMLElement;
@@ -29,14 +34,9 @@ export class StockListComponent extends Component {
 	}
 
 	async render(stockListData: StockListDataResult, updateTimestamp: boolean = true): Promise<void> {
-		const previousDataBySymbol = new Map(this.data.map(stock => [stock.symbol, stock]));
-		const incomingSymbols = new Set(stockListData.stocks.map(stock => stock.symbol));
-		const preservedData = stockListData.errors
-			.map(error => previousDataBySymbol.get(error.symbol))
-			.filter((stock): stock is StockData => stock !== undefined && !incomingSymbols.has(stock.symbol));
-
-		this.data = stockListData.stocks.concat(preservedData);
-		this.errors = stockListData.errors.filter(error => !previousDataBySymbol.has(error.symbol));
+		const displayData = this.createDisplayStockListData(stockListData);
+		this.data = displayData.stocks;
+		this.errors = displayData.errors;
 		this.refreshErrors = new Map(stockListData.errors.map(error => [error.symbol, error.message]));
 
 		if (updateTimestamp && stockListData.stocks.length > 0) {
@@ -82,51 +82,12 @@ export class StockListComponent extends Component {
 
 		const tbody = table.createEl('tbody');
 
-		for (const stock of this.data) {
-			const row = tbody.createEl('tr', { cls: 'stock-list-row' });
-			const refreshError = this.refreshErrors.get(stock.symbol);
-			if (refreshError) {
-				row.addClass('stock-list-stale-row');
+		for (const row of this.createDisplayRows()) {
+			if (row.type === 'stock') {
+				await this.renderStockRow(tbody, row.stock);
+			} else {
+				this.renderErrorRow(tbody, row.error);
 			}
-
-			const symbolCell = row.createEl('td', { cls: 'stock-symbol-cell' });
-			await this.renderSymbol(symbolCell, stock.symbol);
-			if (refreshError) {
-				this.renderRefreshFailureBadge(symbolCell, refreshError);
-			}
-
-			const priceCell = row.createEl('td', { cls: 'stock-price-cell' });
-			priceCell.setText(formatPrice(stock.price, stock.currency));
-
-			const changeCell = row.createEl('td', { cls: 'stock-change-cell' });
-			changeCell.createEl('span', {
-				text: formatPercentage(stock.changePercent),
-				cls: stock.changePercent >= 0 ? 'stock-change-positive' : 'stock-change-negative'
-			});
-
-			if (this.shouldShowTodayColumn()) {
-				const todayChangeCell = row.createEl('td', { cls: 'stock-today-change-cell' });
-				if (stock.todayChangePercent !== undefined) {
-					todayChangeCell.createEl('span', {
-						text: formatPercentage(stock.todayChangePercent),
-						cls: stock.todayChangePercent >= 0 ? 'stock-change-positive' : 'stock-change-negative'
-					});
-				} else {
-					todayChangeCell.createEl('span', {
-						text: 'N/A',
-						cls: 'stock-today-unavailable'
-					});
-				}
-			}
-
-			if (this.config.sparkline !== false) {
-				const chartCell = row.createEl('td', { cls: 'stock-chart-cell' });
-				this.renderSparkline(chartCell, stock);
-			}
-		}
-
-		for (const error of this.errors) {
-			this.renderErrorRow(tbody, error);
 		}
 
 		if (this.config.showLastUpdate !== false) {
@@ -161,6 +122,107 @@ export class StockListComponent extends Component {
 		}
 
 		this.setupAutoRefresh();
+	}
+
+	private createDisplayStockListData(stockListData: StockListDataResult): StockListDataResult {
+		const previousDataBySymbol = new Map(this.data.map(stock => [stock.symbol, stock]));
+		const incomingDataBySymbol = new Map(stockListData.stocks.map(stock => [stock.symbol, stock]));
+		const errorsBySymbol = new Map(stockListData.errors.map(error => [error.symbol, error]));
+		const stocks: StockData[] = [];
+		const errors: StockDataError[] = [];
+
+		for (const symbol of normalizeUniqueTickers(this.config.tickers)) {
+			const incomingData = incomingDataBySymbol.get(symbol);
+			if (incomingData) {
+				stocks.push(incomingData);
+				continue;
+			}
+
+			const error = errorsBySymbol.get(symbol);
+			if (!error) {
+				continue;
+			}
+
+			const previousData = previousDataBySymbol.get(symbol);
+			if (previousData) {
+				stocks.push(previousData);
+			} else {
+				errors.push(error);
+			}
+		}
+
+		return { stocks, errors };
+	}
+
+	private createDisplayRows(): StockListDisplayRow[] {
+		if (this.config.sortBy) {
+			return [
+				...this.data.map(stock => ({ type: 'stock' as const, stock })),
+				...this.errors.map(error => ({ type: 'error' as const, error }))
+			];
+		}
+
+		const stocksBySymbol = new Map(this.data.map(stock => [stock.symbol, stock]));
+		const errorsBySymbol = new Map(this.errors.map(error => [error.symbol, error]));
+		const rows: StockListDisplayRow[] = [];
+
+		for (const symbol of normalizeUniqueTickers(this.config.tickers)) {
+			const stock = stocksBySymbol.get(symbol);
+			if (stock) {
+				rows.push({ type: 'stock', stock });
+				continue;
+			}
+
+			const error = errorsBySymbol.get(symbol);
+			if (error) {
+				rows.push({ type: 'error', error });
+			}
+		}
+
+		return rows;
+	}
+
+	private async renderStockRow(tbody: HTMLElement, stock: StockData): Promise<void> {
+		const row = tbody.createEl('tr', { cls: 'stock-list-row' });
+		const refreshError = this.refreshErrors.get(stock.symbol);
+		if (refreshError) {
+			row.addClass('stock-list-stale-row');
+		}
+
+		const symbolCell = row.createEl('td', { cls: 'stock-symbol-cell' });
+		await this.renderSymbol(symbolCell, stock.symbol);
+		if (refreshError) {
+			this.renderRefreshFailureBadge(symbolCell, refreshError);
+		}
+
+		const priceCell = row.createEl('td', { cls: 'stock-price-cell' });
+		priceCell.setText(formatPrice(stock.price, stock.currency));
+
+		const changeCell = row.createEl('td', { cls: 'stock-change-cell' });
+		changeCell.createEl('span', {
+			text: formatPercentage(stock.changePercent),
+			cls: stock.changePercent >= 0 ? 'stock-change-positive' : 'stock-change-negative'
+		});
+
+		if (this.shouldShowTodayColumn()) {
+			const todayChangeCell = row.createEl('td', { cls: 'stock-today-change-cell' });
+			if (stock.todayChangePercent !== undefined) {
+				todayChangeCell.createEl('span', {
+					text: formatPercentage(stock.todayChangePercent),
+					cls: stock.todayChangePercent >= 0 ? 'stock-change-positive' : 'stock-change-negative'
+				});
+			} else {
+				todayChangeCell.createEl('span', {
+					text: 'N/A',
+					cls: 'stock-today-unavailable'
+				});
+			}
+		}
+
+		if (this.config.sparkline !== false) {
+			const chartCell = row.createEl('td', { cls: 'stock-chart-cell' });
+			this.renderSparkline(chartCell, stock);
+		}
 	}
 
 	private renderRefreshFailureBadge(container: HTMLElement, message: string): void {

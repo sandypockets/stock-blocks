@@ -1,6 +1,7 @@
 import { StockDataService } from '../services/stock-data';
 import { StockData, StockDataError, StockListBlockConfig, StockListDataResult, SingleStockBlockConfig } from '../types';
 import { getErrorMessage } from './error-utils';
+import { normalizeUniqueTickers } from './ticker-utils';
 
 const MAX_STOCK_LIST_CONCURRENCY = 6;
 
@@ -37,27 +38,6 @@ async function mapWithConcurrency<TInput, TOutput>(
 
 	await Promise.all(workers);
 	return results;
-}
-
-function normalizeTicker(ticker: string): string {
-	return ticker.trim().toUpperCase();
-}
-
-function normalizeUniqueTickers(tickers: string[]): string[] {
-	const normalizedTickers: string[] = [];
-	const seenTickers = new Set<string>();
-
-	for (const ticker of tickers) {
-		const normalizedTicker = normalizeTicker(ticker);
-		if (normalizedTicker.length === 0 || seenTickers.has(normalizedTicker)) {
-			continue;
-		}
-
-		seenTickers.add(normalizedTicker);
-		normalizedTickers.push(normalizedTicker);
-	}
-
-	return normalizedTickers;
 }
 
 async function fetchStockListData(

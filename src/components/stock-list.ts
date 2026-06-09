@@ -1,18 +1,22 @@
 import { MarkdownRenderer, Component, App } from 'obsidian';
-import { StockListBlockConfig, StockData, ChartData } from '../types';
+import { StockListBlockConfig, StockData, ChartData, StockDataError, StockListDataResult } from '../types';
 import { formatPrice, formatPercentage } from '../utils/formatters';
 import { createTooltip, hideTooltip } from '../utils/tooltip-utils';
 import { createInteractiveSparkline } from '../utils/sparkline-utils';
+import { getErrorMessage } from '../utils/error-utils';
 
 export class StockListComponent extends Component {
 	private container: HTMLElement;
 	private config: StockListBlockConfig;
 	private data: StockData[] = [];
+	private errors: StockDataError[] = [];
 	private app: App;
 	private autoRefreshInterval?: number;
 	private lastUpdate: Date = new Date();
+	private hasLoadedData = false;
 	private tooltip: HTMLElement | null = null;
 	private sparklineChartIds: string[] = [];
+	private refreshErrors = new Map<string, string>();
 	public refreshDataCallback?: () => Promise<void>;
 	private eventListeners: { element: Element; event: string; handler: EventListener }[] = [];
 
@@ -24,9 +28,22 @@ export class StockListComponent extends Component {
 		this.tooltip = createTooltip(this.container.ownerDocument);
 	}
 
-	async render(stockDataArray: StockData[]): Promise<void> {
-		this.data = stockDataArray;
-		this.lastUpdate = new Date();
+	async render(stockListData: StockListDataResult, updateTimestamp: boolean = true): Promise<void> {
+		const previousDataBySymbol = new Map(this.data.map(stock => [stock.symbol, stock]));
+		const incomingSymbols = new Set(stockListData.stocks.map(stock => stock.symbol));
+		const preservedData = stockListData.errors
+			.map(error => previousDataBySymbol.get(error.symbol))
+			.filter((stock): stock is StockData => stock !== undefined && !incomingSymbols.has(stock.symbol));
+
+		this.data = stockListData.stocks.concat(preservedData);
+		this.errors = stockListData.errors.filter(error => !previousDataBySymbol.has(error.symbol));
+		this.refreshErrors = new Map(stockListData.errors.map(error => [error.symbol, error.message]));
+
+		if (updateTimestamp && stockListData.stocks.length > 0) {
+			this.lastUpdate = new Date();
+			this.hasLoadedData = true;
+		}
+
 		this.sparklineChartIds = [];
 		
 		for (const { element, event, handler } of this.eventListeners) {
@@ -38,7 +55,7 @@ export class StockListComponent extends Component {
 		this.container.addClass('stock-list-container');
 		this.renderHeader();
 
-		if (this.data.length === 0) {
+		if (this.data.length === 0 && this.errors.length === 0) {
 			this.container.createEl('div', {
 				text: 'No stock data available',
 				cls: 'stock-list-empty'
@@ -67,9 +84,16 @@ export class StockListComponent extends Component {
 
 		for (const stock of this.data) {
 			const row = tbody.createEl('tr', { cls: 'stock-list-row' });
+			const refreshError = this.refreshErrors.get(stock.symbol);
+			if (refreshError) {
+				row.addClass('stock-list-stale-row');
+			}
 
 			const symbolCell = row.createEl('td', { cls: 'stock-symbol-cell' });
 			await this.renderSymbol(symbolCell, stock.symbol);
+			if (refreshError) {
+				this.renderRefreshFailureBadge(symbolCell, refreshError);
+			}
 
 			const priceCell = row.createEl('td', { cls: 'stock-price-cell' });
 			priceCell.setText(formatPrice(stock.price, stock.currency));
@@ -101,6 +125,10 @@ export class StockListComponent extends Component {
 			}
 		}
 
+		for (const error of this.errors) {
+			this.renderErrorRow(tbody, error);
+		}
+
 		if (this.config.showLastUpdate !== false) {
 			const bottomContainer = tableWrapper.createEl('div', { cls: 'stock-list-bottom-container' });
 			const leftSection = bottomContainer.createEl('div', { cls: 'stock-list-bottom-left' });
@@ -113,7 +141,7 @@ export class StockListComponent extends Component {
 
 			const rightSection = bottomContainer.createEl('div', { cls: 'stock-list-bottom-right' });
 			rightSection.createEl('span', {
-				text: `Last updated: ${this.lastUpdate.toLocaleTimeString()}`,
+				text: this.hasLoadedData ? `Last updated: ${this.lastUpdate.toLocaleTimeString()}` : 'No successful update yet',
 				cls: 'stock-list-info'
 			});
 
@@ -133,6 +161,51 @@ export class StockListComponent extends Component {
 		}
 
 		this.setupAutoRefresh();
+	}
+
+	private renderRefreshFailureBadge(container: HTMLElement, message: string): void {
+		const badge = container.createEl('span', {
+			text: 'Refresh failed',
+			cls: 'stock-refresh-failed-badge'
+		});
+		badge.title = message;
+	}
+
+	private renderErrorRow(tbody: HTMLElement, error: StockDataError): void {
+		const row = tbody.createEl('tr', { cls: 'stock-list-row' });
+		row.addClass('stock-list-error-row');
+
+		const symbolCell = row.createEl('td', { cls: 'stock-symbol-cell' });
+		symbolCell.setText(error.symbol);
+
+		const priceCell = row.createEl('td', { cls: 'stock-price-cell' });
+		priceCell.createEl('span', {
+			text: 'Unavailable',
+			cls: 'stock-list-error-value'
+		});
+
+		const changeCell = row.createEl('td', { cls: 'stock-change-cell' });
+		const messageEl = changeCell.createEl('span', {
+			text: error.message,
+			cls: 'stock-list-row-error-message'
+		});
+		messageEl.title = error.message;
+
+		if (this.shouldShowTodayColumn()) {
+			const todayChangeCell = row.createEl('td', { cls: 'stock-today-change-cell' });
+			todayChangeCell.createEl('span', {
+				text: 'N/A',
+				cls: 'stock-today-unavailable'
+			});
+		}
+
+		if (this.config.sparkline !== false) {
+			const chartCell = row.createEl('td', { cls: 'stock-chart-cell' });
+			chartCell.createEl('span', {
+				text: 'Failed to load',
+				cls: 'stock-list-error-value'
+			});
+		}
 	}
 
 	private async renderSymbol(container: HTMLElement, symbol: string): Promise<void> {
@@ -296,8 +369,8 @@ export class StockListComponent extends Component {
 		this.config = config;
 	}
 
-	updateData(stockDataArray: StockData[]): void {
-		void this.render(stockDataArray);
+	updateData(stockListData: StockListDataResult): void {
+		void this.render(stockListData);
 	}
 
 	private shouldShowTodayColumn(): boolean {
@@ -327,13 +400,29 @@ export class StockListComponent extends Component {
 		}
 
 		try {
+			this.clearRefreshError();
 			await this.refreshDataCallback();
+		} catch (error: unknown) {
+			this.showRefreshError(getErrorMessage(error, 'Unable to refresh stock data'));
 		} finally {
 			if (refreshBtn) {
 				refreshBtn.disabled = false;
 				refreshBtn.textContent = '↻ Refresh';
 			}
 		}
+	}
+
+	private clearRefreshError(): void {
+		this.container.querySelector('.stock-refresh-error-banner')?.remove();
+	}
+
+	private showRefreshError(message: string): void {
+		this.clearRefreshError();
+
+		const banner = this.container.ownerDocument.createElement('div');
+		banner.className = 'stock-refresh-error-banner';
+		banner.textContent = `Refresh failed: ${message}. Showing last successful data.`;
+		this.container.prepend(banner);
 	}
 
 	private renderHeader(): void {
@@ -379,7 +468,20 @@ export class StockListComponent extends Component {
 		}
 
 		this.sortData();
-		void this.render(this.data);
+		void this.render(this.createCurrentStockListData(), false);
+	}
+
+	private createCurrentStockListData(): StockListDataResult {
+		const errors = this.errors.slice();
+
+		for (const stock of this.data) {
+			const message = this.refreshErrors.get(stock.symbol);
+			if (message) {
+				errors.push({ symbol: stock.symbol, message });
+			}
+		}
+
+		return { stocks: this.data, errors };
 	}
 
 	private sortData(): void {
@@ -419,9 +521,7 @@ export class StockListComponent extends Component {
 		if (this.config.refreshInterval && this.config.refreshInterval > 0) {
 			this.clearAutoRefresh();
 			this.autoRefreshInterval = window.setInterval(() => {
-				if (this.refreshDataCallback) {
-					void this.refreshDataCallback().catch(() => undefined);
-				}
+				void this.refreshData();
 			}, this.config.refreshInterval * 60 * 1000);
 		}
 	}

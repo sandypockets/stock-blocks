@@ -124,6 +124,53 @@
 	font-size: 0.9em;
 }
 
+.stock-list-stale-row {
+	background-color: var(--background-primary-alt);
+}
+
+.stock-list-error-row {
+	background-color: var(--background-modifier-error);
+}
+
+.stock-refresh-failed-badge {
+	display: inline-block;
+	margin-left: 0.5rem;
+	padding: 0.05rem 0.35rem;
+	border: 1px solid var(--background-modifier-error-border);
+	border-radius: 4px;
+	color: var(--color-red);
+	background-color: var(--background-modifier-error);
+	font-size: 0.7rem;
+	font-weight: 500;
+	vertical-align: middle;
+}
+
+.stock-list-error-value,
+.stock-list-row-error-message {
+	color: var(--color-red);
+	font-size: 0.85rem;
+}
+
+.stock-list-row-error-message {
+	display: inline-block;
+	max-width: 28rem;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	vertical-align: bottom;
+}
+
+.stock-refresh-error-banner {
+	margin-bottom: 0.75rem;
+	padding: 0.5rem 0.75rem;
+	border: 1px solid var(--background-modifier-error-border);
+	border-radius: 6px;
+	color: var(--color-red);
+	background-color: var(--background-modifier-error);
+	font-size: 0.85rem;
+	line-height: 1.4;
+}
+
 .stock-chart-cell {
 	text-align: center;
 }

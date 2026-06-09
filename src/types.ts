@@ -18,6 +18,16 @@ export interface StockData {
 	ohlcData?: OHLCData[];
 }
 
+export interface StockDataError {
+	symbol: string;
+	message: string;
+}
+
+export interface StockListDataResult {
+	stocks: StockData[];
+	errors: StockDataError[];
+}
+
 export interface StockListBlockConfig {
 	tickers: string[];
 	days: number;

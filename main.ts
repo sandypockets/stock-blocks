@@ -140,13 +140,8 @@ export default class StockTickerPlugin extends Plugin {
 		refreshDataFetcher: (component: TComponent, config: TConfig) => Promise<TData>
 	): void {
 		component.refreshDataCallback = async () => {
-			try {
-				this.stockDataService.clearCache();
-				const freshData = await refreshDataFetcher(component, config);
-				await component.render(freshData);
-			} catch {
-				// Refresh errors are already shown by the rendered block when data loading fails.
-			}
+			const freshData = await refreshDataFetcher(component, config);
+			await component.render(freshData);
 		};
 	}
 

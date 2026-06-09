@@ -6,6 +6,7 @@ import { createInteractiveChart, interpolatePrice } from '../utils/line-chart-ut
 import { createCandlestickChart, interpolateCandlestickPrice } from '../utils/candlestick-utils';
 import { getTimeRangeDescription, calculateOptimalDateRange } from '../utils/date-utils';
 import { calculatePriceRange } from '../utils/math-utils';
+import { getErrorMessage } from '../utils/error-utils';
 
 export class StockChartComponent extends Component {
 	private container: HTMLElement;
@@ -29,6 +30,7 @@ export class StockChartComponent extends Component {
 
 	async render(stockData: StockData): Promise<void> {
 		this.data = stockData;
+		this.lastUpdate = new Date();
 		this.container.empty();
 		this.container.addClass('stock-chart-container');
 
@@ -331,14 +333,29 @@ export class StockChartComponent extends Component {
 		}
 
 		try {
+			this.clearRefreshError();
 			await this.refreshDataCallback();
-			this.lastUpdate = new Date();
+		} catch (error: unknown) {
+			this.showRefreshError(getErrorMessage(error, 'Unable to refresh stock data'));
 		} finally {
 			if (refreshBtn) {
 				refreshBtn.disabled = false;
 				refreshBtn.textContent = '↻ Refresh';
 			}
 		}
+	}
+
+	private clearRefreshError(): void {
+		this.container.querySelector('.stock-refresh-error-banner')?.remove();
+	}
+
+	private showRefreshError(message: string): void {
+		this.clearRefreshError();
+
+		const banner = this.container.ownerDocument.createElement('div');
+		banner.className = 'stock-refresh-error-banner';
+		banner.textContent = `Refresh failed: ${message}. Showing last successful data.`;
+		this.container.prepend(banner);
 	}
 
 	private async renderSymbol(container: HTMLElement, symbol: string): Promise<void> {

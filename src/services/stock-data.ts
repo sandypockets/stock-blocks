@@ -35,6 +35,10 @@ interface YahooChartResponse {
 	};
 }
 
+interface StockDataRequestOptions {
+	forceRefresh?: boolean;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null;
 }
@@ -104,6 +108,7 @@ function createOHLCData(open: unknown, high: unknown, low: unknown, close: unkno
 
 export class StockDataService {
 	private cache = new Map<string, CacheEntry>();
+	private pendingRequests = new Map<string, Promise<StockData>>();
 	private cacheDuration: number;
 	private useBusinessDays: boolean;
 	private minDataPoints: number;
@@ -118,30 +123,61 @@ export class StockDataService {
 		this.minDataPoints = minDataPoints;
 	}
 
-	async getStockData(symbol: string, days: number = 30, includeOHLC: boolean = false): Promise<StockData> {
-		const cacheKey = `${symbol}-${days}-${this.useBusinessDays}-${includeOHLC}`;
+	async getStockData(
+		symbol: string,
+		days: number = 30,
+		includeOHLC: boolean = false,
+		options: StockDataRequestOptions = {}
+	): Promise<StockData> {
+		const cleanSymbol = this.normalizeSymbol(symbol);
+		const cacheKey = this.createCacheKey(cleanSymbol, days, includeOHLC);
 		const cached = this.cache.get(cacheKey);
 
-		if (cached && Date.now() - cached.timestamp < this.cacheDuration) {
+		if (!options.forceRefresh && cached && Date.now() - cached.timestamp < this.cacheDuration) {
 			return cached.data;
 		}
 
+		const pendingRequest = this.pendingRequests.get(cacheKey);
+		if (pendingRequest) {
+			return pendingRequest;
+		}
+
+		const request = this.fetchAndCacheStockData(cleanSymbol, days, includeOHLC, cacheKey);
+		this.pendingRequests.set(cacheKey, request);
+		return request;
+	}
+
+	private async fetchAndCacheStockData(
+		cleanSymbol: string,
+		days: number,
+		includeOHLC: boolean,
+		cacheKey: string
+	): Promise<StockData> {
 		try {
-			const data = await this.fetchRealStockData(symbol, days, includeOHLC);
+			const data = await this.fetchRealStockData(cleanSymbol, days, includeOHLC);
 			this.cache.set(cacheKey, {
 				data,
 				timestamp: Date.now()
 			});
 
 			return data;
-			} catch (error: unknown) {
-				// Re-throw the error so the UI can show the Yahoo Finance failure
-				throw new Error(`Yahoo Finance API failed for ${symbol}: ${getErrorMessage(error, 'Network or API error')}`);
-			}
+		} catch (error: unknown) {
+			throw new Error(`Yahoo Finance API failed for ${cleanSymbol}: ${getErrorMessage(error, 'Network or API error')}`);
+		} finally {
+			this.pendingRequests.delete(cacheKey);
 		}
+	}
+
+	private createCacheKey(symbol: string, days: number, includeOHLC: boolean): string {
+		return `${this.normalizeSymbol(symbol)}-${days}-${this.useBusinessDays}-${includeOHLC}`;
+	}
+
+	private normalizeSymbol(symbol: string): string {
+		return symbol.toUpperCase().trim();
+	}
 
 	private async fetchRealStockData(symbol: string, days: number, includeOHLC: boolean = false): Promise<StockData> {
-		const cleanSymbol = symbol.toUpperCase().trim();
+		const cleanSymbol = this.normalizeSymbol(symbol);
 		const dateRange = calculateOptimalDateRange(days, this.useBusinessDays);
 		const url = `https://query1.finance.yahoo.com/v8/finance/chart/${cleanSymbol}?period1=${dateRange.startDate}&period2=${dateRange.endDate}&interval=1d`;
 
@@ -153,21 +189,21 @@ export class StockDataService {
 			}
 		});
 
-			const responseJson: unknown = response.json;
-			if (!isYahooChartResponse(responseJson)) {
-				throw new Error('Invalid response format from Yahoo Finance');
-			}
+		const responseJson: unknown = response.json;
+		if (!isYahooChartResponse(responseJson)) {
+			throw new Error('Invalid response format from Yahoo Finance');
+		}
 
-			const result = responseJson.chart.result[0];
-			const quotes = result?.indicators.quote[0];
-			if (!result || !quotes) {
-				throw new Error(`No data found for symbol ${cleanSymbol}`);
-			}
+		const result = responseJson.chart.result[0];
+		const quotes = result?.indicators.quote[0];
+		if (!result || !quotes) {
+			throw new Error(`No data found for symbol ${cleanSymbol}`);
+		}
 
-			const timestamps = result.timestamp;
-			const closePrices = quotes.close;
-			const openPrices = quotes.open;
-			const highPrices = quotes.high;
+		const timestamps = result.timestamp;
+		const closePrices = quotes.close;
+		const openPrices = quotes.open;
+		const highPrices = quotes.high;
 		const lowPrices = quotes.low;
 
 		const validData: { timestamp: number; price: number; ohlc?: OHLCData }[] = [];

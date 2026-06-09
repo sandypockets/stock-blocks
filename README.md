@@ -185,6 +185,9 @@ The plugin fetches real stock data from Yahoo Finance API, which provides free a
 Features:
 - No API key required
 - Automatic caching to reduce API calls
+- Scoped refreshes that update only the symbols in the current block
+- Partial stock list results when one symbol fails, with successful rows kept visible
+- Failed refreshes keep the last successful data visible while showing the refresh error
 - Clear error messages when Yahoo Finance is unavailable
 - Real-time data updates when notes are opened
 

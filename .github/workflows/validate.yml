@@ -29,7 +29,7 @@ jobs:
           PACKAGE_LOCK_ROOT_VERSION=$(node -p "require('./package-lock.json').packages[''].version")
           MANIFEST_MIN_APP_VERSION=$(node -p "require('./manifest.json').minAppVersion")
           VERSIONS_MIN_APP_VERSION=$(node -p "require('./versions.json')[require('./manifest.json').version] || ''")
-          VERSION_UPDATE_HINT="Please run 'npm run update-version patch' or choose a new semantic version with 'npm run update-version x.y.z'."
+          VERSION_UPDATE_HINT="Please run 'npm run update-version patch' for a release bump, or 'npm run update-version x.y.z' to repair metadata for an existing intended version."
           
           echo "Package.json version: $PACKAGE_VERSION"
           echo "Manifest.json version: $MANIFEST_VERSION"

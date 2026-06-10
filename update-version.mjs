@@ -60,15 +60,20 @@ function getNewVersion(currentVersion, versionType) {
   return versionType;
 }
 
-function updatePackageVersion(newVersion) {
+function updatePackageVersion(currentVersion, newVersion) {
   const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-
-  execFileSync(npmCommand, [
+  const versionArgs = [
     'version',
     newVersion,
     '--no-git-tag-version',
     '--ignore-scripts'
-  ], {
+  ];
+
+  if (newVersion === currentVersion) {
+    versionArgs.push('--allow-same-version');
+  }
+
+  execFileSync(npmCommand, versionArgs, {
     stdio: 'inherit'
   });
 }
@@ -108,7 +113,7 @@ try {
   const currentVersion = packageJson.version;
   const newVersion = getNewVersion(currentVersion, versionType);
 
-  updatePackageVersion(newVersion);
+  updatePackageVersion(currentVersion, newVersion);
   
   console.log(`📦 Updated package.json: ${currentVersion} -> ${newVersion}`);
   

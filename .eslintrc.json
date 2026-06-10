@@ -30,5 +30,5 @@
     "no-var": "error",
     "no-case-declarations": "off"
   },
-  "ignorePatterns": ["main.js", "*.config.mjs", "version-bump.mjs"]
+  "ignorePatterns": ["main.js", "*.config.mjs", "version-bump.mjs", "update-version.mjs"]
 }

@@ -111,6 +111,10 @@ npm run build
 - Attach `manifest.json`, `main.js`, and `styles.css` (if present) to the release as individual assets.
 - After the initial release, follow the process to add/update your plugin in the community catalog as required.
 
+## Release note inputs
+
+Release notes are generated from GitHub PR titles and commit subjects. Keep PR titles and commit subjects descriptive, action-oriented, and focused on the real change. Version-bump-only commits are filtered from release notes.
+
 ## Security, privacy, and compliance
 
 Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particular:

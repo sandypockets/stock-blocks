@@ -20,7 +20,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Check if version changed
         id: version
@@ -81,6 +81,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -131,33 +133,9 @@ jobs:
 
       - name: Create release notes
         id: release-notes
-        run: |
-          VERSION="${{ needs.check-version.outputs.version }}"
-          
-          # Generate SHA256 checksums for Obsidian-supported release assets
-          MAIN_SHA=$(sha256sum main.js | cut -d' ' -f1)
-          MANIFEST_SHA=$(sha256sum manifest.json | cut -d' ' -f1)
-          STYLES_SHA=$(sha256sum styles.css | cut -d' ' -f1)
-          
-          # Create release notes with checksums
-          cat > release-notes.md << EOF
-          ## Stock Blocks Plugin v$VERSION
-          
-          ### Checksums (SHA256)
-          \`\`\`
-          main.js:      $MAIN_SHA
-          manifest.json: $MANIFEST_SHA
-          styles.css:   $STYLES_SHA
-          \`\`\`
-          
-          ### Verification
-          After downloading, verify file integrity:
-          \`\`\`bash
-          sha256sum main.js manifest.json styles.css
-          \`\`\`
-
-          This release is built by GitHub Actions and includes GitHub artifact attestations for the release assets.
-          EOF
+        run: node generate-release-notes.mjs "${{ needs.check-version.outputs.version }}" release-notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release
         id: create-release

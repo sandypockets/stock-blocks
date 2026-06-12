@@ -15,7 +15,7 @@ This repository uses GitHub Actions to automatically create releases when the pl
    - `manifest.json` (plugin metadata)
    - `styles.css` (plugin styles)
 
-4. Release Notes: Automatic generation of release notes with SHA256 checksums and verification instructions.
+4. Release Notes: Automatic generation of release notes with a "What changed" summary, SHA256 checksums, and verification instructions.
 
 5. Attestations: Release assets receive GitHub artifact attestations, and immutable releases receive GitHub release attestations after publication.
 
@@ -110,6 +110,7 @@ This method:
 5. Release Creation - Creates a GitHub release with proper assets
 6. Asset Upload - Uploads `main.js`, `manifest.json`, and `styles.css`
 7. Release Publication - Publishes the draft release after the complete asset set is attached
+8. Release Notes - Uses GitHub-generated notes from the previous SemVer tag when available, then falls back to local commit subjects if needed.
 
 ### Safety Features
 
@@ -118,6 +119,7 @@ This method:
 - Build Validation - Ensures the plugin builds successfully before creating a release
 - Asset Verification - Confirms all required files are present and non-empty
 - Obsidian Asset Compatibility - Publishes only `main.js`, `manifest.json`, and `styles.css` as release assets
+- Release Notes Fallback - Keeps release notes useful if GitHub-generated notes are unavailable during the workflow
 
 ### Monitoring Releases
 
@@ -156,6 +158,6 @@ This method:
    - `major` (2.0.0) for breaking changes
 3. Review the validation workflow on pull requests to catch issues early
 4. Monitor the Actions tab after pushing to ensure successful release
-5.  Keep release notes meaningful by making descriptive commit messages
+5. Keep release notes meaningful by making descriptive commit messages and pull request titles
 
 This automated system ensures that every version update results in a proper, immutable release with all necessary assets for Obsidian plugin installation.

@@ -25,9 +25,17 @@ jobs:
         run: |
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
           MANIFEST_VERSION=$(node -p "require('./manifest.json').version")
+          PACKAGE_LOCK_VERSION=$(node -p "require('./package-lock.json').version")
+          PACKAGE_LOCK_ROOT_VERSION=$(node -p "require('./package-lock.json').packages[''].version")
+          MANIFEST_MIN_APP_VERSION=$(node -p "require('./manifest.json').minAppVersion")
+          VERSIONS_MIN_APP_VERSION=$(node -p "require('./versions.json')[require('./manifest.json').version] || ''")
+          VERSION_UPDATE_HINT="Please run 'npm run update-version patch' for a release bump, or 'npm run update-version x.y.z' to repair metadata for an existing intended version."
           
           echo "Package.json version: $PACKAGE_VERSION"
           echo "Manifest.json version: $MANIFEST_VERSION"
+          echo "Package-lock.json version: $PACKAGE_LOCK_VERSION"
+          echo "Package-lock.json root package version: $PACKAGE_LOCK_ROOT_VERSION"
+          echo "Versions.json min app version for $MANIFEST_VERSION: $VERSIONS_MIN_APP_VERSION"
           
           if [ "$PACKAGE_VERSION" != "$MANIFEST_VERSION" ]; then
             echo "❌ Version mismatch detected!"
@@ -35,7 +43,35 @@ jobs:
             echo "   manifest.json: $MANIFEST_VERSION"
             echo ""
             echo "Please ensure both files have the same version number."
-            echo "You can run 'npm version patch/minor/major' to update both automatically."
+            echo "$VERSION_UPDATE_HINT"
+            exit 1
+          fi
+
+          if [ "$PACKAGE_LOCK_VERSION" != "$PACKAGE_VERSION" ]; then
+            echo "❌ Version mismatch detected!"
+            echo "   package.json: $PACKAGE_VERSION"
+            echo "   package-lock.json: $PACKAGE_LOCK_VERSION"
+            echo ""
+            echo "$VERSION_UPDATE_HINT"
+            exit 1
+          fi
+
+          if [ "$PACKAGE_LOCK_ROOT_VERSION" != "$PACKAGE_VERSION" ]; then
+            echo "❌ Version mismatch detected!"
+            echo "   package.json: $PACKAGE_VERSION"
+            echo "   package-lock.json root package: $PACKAGE_LOCK_ROOT_VERSION"
+            echo ""
+            echo "$VERSION_UPDATE_HINT"
+            exit 1
+          fi
+
+          if [ "$VERSIONS_MIN_APP_VERSION" != "$MANIFEST_MIN_APP_VERSION" ]; then
+            echo "❌ versions.json mismatch detected!"
+            echo "   manifest.json version: $MANIFEST_VERSION"
+            echo "   manifest.json minAppVersion: $MANIFEST_MIN_APP_VERSION"
+            echo "   versions.json[$MANIFEST_VERSION]: $VERSIONS_MIN_APP_VERSION"
+            echo ""
+            echo "$VERSION_UPDATE_HINT"
             exit 1
           fi
           

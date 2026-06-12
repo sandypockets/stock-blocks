@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
+import { execFileSync } from 'child_process';
 import { readFileSync, writeFileSync } from 'fs';
 
 const args = process.argv.slice(2);
-const versionType = args[0]; // patch, minor, major, or specific version
+const versionType = args[0];
 
 if (!versionType) {
   console.log('Usage: node update-version.mjs <patch|minor|major|x.y.z>');
@@ -15,7 +16,23 @@ if (!versionType) {
   process.exit(1);
 }
 
+function readJson(filePath) {
+  return JSON.parse(readFileSync(filePath, 'utf8'));
+}
+
+function writeJson(filePath, value) {
+  writeFileSync(filePath, JSON.stringify(value, null, '\t') + '\n');
+}
+
+function isSemver(version) {
+  return /^\d+\.\d+\.\d+$/.test(version);
+}
+
 function incrementVersion(version, type) {
+  if (!isSemver(version)) {
+    throw new Error(`Current package.json version is not semver: ${version}`);
+  }
+
   const parts = version.split('.').map(Number);
   const [major, minor, patch] = parts;
   
@@ -31,48 +48,88 @@ function incrementVersion(version, type) {
   }
 }
 
-try {
-  // Read current package.json
-  const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
-  const currentVersion = packageJson.version;
-  
-  let newVersion;
-  
+function getNewVersion(currentVersion, versionType) {
   if (['patch', 'minor', 'major'].includes(versionType)) {
-    // Calculate new version manually
-    newVersion = incrementVersion(currentVersion, versionType);
-    
-    // Update package.json
-    packageJson.version = newVersion;
-    writeFileSync('package.json', JSON.stringify(packageJson, null, '\t') + '\n');
-  } else {
-    // Use provided version
-    newVersion = versionType;
-    if (!/^\d+\.\d+\.\d+$/.test(newVersion)) {
-      console.error('❌ Invalid version format. Expected semver (x.y.z)');
-      process.exit(1);
-    }
-    
-    // Update package.json manually
-    packageJson.version = newVersion;
-    writeFileSync('package.json', JSON.stringify(packageJson, null, '\t') + '\n');
+    return incrementVersion(currentVersion, versionType);
   }
+
+  if (!isSemver(versionType)) {
+    throw new Error('Invalid version format. Expected semver (x.y.z)');
+  }
+
+  return versionType;
+}
+
+function updatePackageVersion(currentVersion, newVersion) {
+  const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const versionArgs = [
+    'version',
+    newVersion,
+    '--no-git-tag-version',
+    '--ignore-scripts'
+  ];
+
+  if (newVersion === currentVersion) {
+    versionArgs.push('--allow-same-version');
+  }
+
+  execFileSync(npmCommand, versionArgs, {
+    stdio: 'inherit'
+  });
+}
+
+function validateVersionMetadata(expectedVersion, expectedMinAppVersion) {
+  const packageJson = readJson('package.json');
+  const manifest = readJson('manifest.json');
+  const versions = readJson('versions.json');
+  const packageLock = readJson('package-lock.json');
+  const lockRootVersion = packageLock.packages?.['']?.version;
+
+  const errors = [];
+
+  if (packageJson.version !== expectedVersion) {
+    errors.push(`package.json version is ${packageJson.version}`);
+  }
+  if (manifest.version !== expectedVersion) {
+    errors.push(`manifest.json version is ${manifest.version}`);
+  }
+  if (packageLock.version !== expectedVersion) {
+    errors.push(`package-lock.json version is ${packageLock.version}`);
+  }
+  if (lockRootVersion !== expectedVersion) {
+    errors.push(`package-lock.json root package version is ${lockRootVersion}`);
+  }
+  if (versions[expectedVersion] !== expectedMinAppVersion) {
+    errors.push(`versions.json ${expectedVersion} maps to ${versions[expectedVersion]}`);
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Version metadata mismatch:\n${errors.map(error => `- ${error}`).join('\n')}`);
+  }
+}
+
+try {
+  const packageJson = readJson('package.json');
+  const currentVersion = packageJson.version;
+  const newVersion = getNewVersion(currentVersion, versionType);
+
+  updatePackageVersion(currentVersion, newVersion);
   
   console.log(`📦 Updated package.json: ${currentVersion} -> ${newVersion}`);
   
-  // Update manifest.json
-  const manifest = JSON.parse(readFileSync('manifest.json', 'utf8'));
+  const manifest = readJson('manifest.json');
   const currentManifestVersion = manifest.version;
   const { minAppVersion } = manifest;
   manifest.version = newVersion;
-  writeFileSync('manifest.json', JSON.stringify(manifest, null, '\t') + '\n');
+  writeJson('manifest.json', manifest);
   console.log(`📄 Updated manifest.json: ${currentManifestVersion} -> ${newVersion}`);
   
-  // Update versions.json
-  const versions = JSON.parse(readFileSync('versions.json', 'utf8'));
+  const versions = readJson('versions.json');
   versions[newVersion] = minAppVersion;
-  writeFileSync('versions.json', JSON.stringify(versions, null, '\t') + '\n');
+  writeJson('versions.json', versions);
   console.log(`🗂️  Updated versions.json: added ${newVersion} -> ${minAppVersion}`);
+
+  validateVersionMetadata(newVersion, minAppVersion);
   
   console.log('\n✅ Version update completed successfully!');
   console.log('\nNext steps:');

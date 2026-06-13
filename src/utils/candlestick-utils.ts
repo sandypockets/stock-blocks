@@ -3,6 +3,7 @@ import { CANDLESTICK_CONFIG } from './chart-constants';
 import { formatPrice } from './formatters';
 import { calculateOHLCRange, calculateChartDimensions } from './math-utils';
 import { appendSvgElement, createSvgElement } from './svg-utils';
+import { calculateAxisPadding } from './chart-axis-utils';
 
 function calculateCandlestickDimensions(dataLength: number, chartWidth: number): {
 	candleWidth: number;
@@ -104,7 +105,8 @@ export function createCandlestickChart(
 	width: number,
 	height: number,
 	showAxes: boolean = false,
-	currency: string = 'USD'
+	currency: string = 'USD',
+	pricePrecision?: number
 ): ChartRenderResult {
 	const chartId = `candles-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 	const svg = createSvgElement(doc, 'svg', {
@@ -123,6 +125,7 @@ export function createCandlestickChart(
 			max: 0,
 			range: 0,
 			currency,
+			pricePrecision,
 			width,
 			height
 		};
@@ -134,10 +137,17 @@ export function createCandlestickChart(
 	}
 
 	if (ohlcData.length === 1) {
-		const padding = showAxes ? 40 : 10;
 		const centerX = width / 2;
 		const centerY = height / 2;
 		const ohlc = ohlcData[0];
+		const padding = calculateAxisPadding(
+			showAxes,
+			width,
+			height,
+			[Math.max(ohlc.low, ohlc.high, ohlc.open, ohlc.close), Math.min(ohlc.low, ohlc.high, ohlc.open, ohlc.close)],
+			currency,
+			pricePrecision
+		);
 
 		const chartData: ChartData = {
 			candles: [{
@@ -156,6 +166,7 @@ export function createCandlestickChart(
 			max: Math.max(ohlc.low, ohlc.high, ohlc.open, ohlc.close),
 			range: Math.max(ohlc.high - ohlc.low, 1),
 			currency,
+			pricePrecision,
 			width,
 			height,
 			isSinglePoint: true
@@ -177,7 +188,7 @@ export function createCandlestickChart(
 			'text-anchor': 'middle',
 			'font-size': 12,
 			fill: '#374151'
-		}, formatPrice(ohlc.close, currency));
+		}, formatPrice(ohlc.close, currency, pricePrecision));
 		appendSvgElement(svg, 'text', {
 			x: centerX,
 			y: centerY + 25,
@@ -201,11 +212,11 @@ export function createCandlestickChart(
 		};
 	}
 
-	const padding = showAxes ? 40 : 10;
+	const { min, max, range } = calculateOHLCRange(ohlcData);
+	const midPrice = (min + max) / 2;
+	const padding = calculateAxisPadding(showAxes, width, height, [max, midPrice, min], currency, pricePrecision);
 	const chartDimensions = calculateChartDimensions(width, height, padding);
 	const { chartWidth, chartHeight, rightBound, bottomBound, midX, midY } = chartDimensions;
-
-	const { min, max, range } = calculateOHLCRange(ohlcData);
 
 	const dimensions = calculateCandlestickDimensions(ohlcData.length, chartWidth);
 	const { candleWidth } = dimensions;
@@ -237,14 +248,13 @@ export function createCandlestickChart(
 	svg.classList.add('stock-chart', 'interactive-chart', 'candlestick-chart');
 
 	if (showAxes) {
-		const midPrice = (min + max) / 2;
 		const startDate = new Date(timestamps[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 		const endDate = new Date(timestamps[timestamps.length - 1]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 		const midDate = new Date(timestamps[Math.floor(timestamps.length / 2)]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-		appendSvgElement(svg, 'text', { x: 5, y: padding + 5, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'start' }, formatPrice(max, currency));
-		appendSvgElement(svg, 'text', { x: 5, y: midY + 3, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'start' }, formatPrice(midPrice, currency));
-		appendSvgElement(svg, 'text', { x: 5, y: bottomBound, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'start' }, formatPrice(min, currency));
+		appendSvgElement(svg, 'text', { x: 5, y: padding + 5, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'start' }, formatPrice(max, currency, pricePrecision));
+		appendSvgElement(svg, 'text', { x: 5, y: midY + 3, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'start' }, formatPrice(midPrice, currency, pricePrecision));
+		appendSvgElement(svg, 'text', { x: 5, y: bottomBound, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'start' }, formatPrice(min, currency, pricePrecision));
 		appendSvgElement(svg, 'text', { x: padding, y: height - 5, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'start' }, startDate);
 		appendSvgElement(svg, 'text', { x: midX, y: height - 5, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'middle' }, midDate);
 		appendSvgElement(svg, 'text', { x: rightBound, y: height - 5, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'end' }, endDate);
@@ -290,6 +300,7 @@ export function createCandlestickChart(
 		max,
 		range,
 		currency,
+		pricePrecision,
 		width,
 		height,
 		candleWidth

@@ -1,13 +1,19 @@
 import { StockDataService } from '../services/stock-data';
-import { StockData, StockDataError, StockListBlockConfig, StockListDataResult, SingleStockBlockConfig } from '../types';
+import { AssetType, StockData, StockDataError, StockListBlockConfig, StockListDataResult, SingleStockBlockConfig } from '../types';
 import { getErrorMessage } from './error-utils';
 import { normalizeUniqueTickers } from './ticker-utils';
 
 const MAX_STOCK_LIST_CONCURRENCY = 6;
+const SUPPORTED_CRYPTO_QUOTE_CURRENCY = 'USD';
 
 type StockListRequestResult =
 	| { status: 'success'; stock: StockData }
 	| { status: 'error'; error: StockDataError };
+
+interface StockListRequest {
+	symbol: string;
+	assetType: AssetType;
+}
 
 interface StockDataFetcher {
 	fetchListData(config: StockListBlockConfig): Promise<StockListDataResult>;
@@ -45,19 +51,22 @@ async function fetchStockListData(
 	config: StockListBlockConfig,
 	forceRefresh: boolean
 ): Promise<StockListDataResult> {
-	const tickers = normalizeUniqueTickers(config.tickers);
+	const requests = createStockListRequests(config);
 	const requestResults = await mapWithConcurrency(
-		tickers,
+		requests,
 		MAX_STOCK_LIST_CONCURRENCY,
-		async (ticker: string): Promise<StockListRequestResult> => {
+		async (request: StockListRequest): Promise<StockListRequestResult> => {
 			try {
-				const stock = await stockDataService.getStockData(ticker, config.days, false, { forceRefresh });
+				const stock = request.assetType === 'crypto'
+					? await stockDataService.getCryptoData(request.symbol, config.quoteCurrency, config.days, false, { forceRefresh })
+					: await stockDataService.getStockData(request.symbol, config.days, false, { forceRefresh });
 				return { status: 'success', stock };
 			} catch (error: unknown) {
 				return {
 					status: 'error',
 					error: {
-						symbol: ticker,
+						symbol: request.symbol,
+						assetType: request.assetType,
 						message: getErrorMessage(error, 'Unable to load stock data')
 					}
 				};
@@ -79,6 +88,13 @@ async function fetchStockListData(
 	return { stocks, errors };
 }
 
+function createStockListRequests(config: StockListBlockConfig): StockListRequest[] {
+	return [
+		...normalizeUniqueTickers(config.tickers).map(symbol => ({ symbol, assetType: 'stock' as const })),
+		...normalizeUniqueTickers(config.cryptos).map(symbol => ({ symbol, assetType: 'crypto' as const }))
+	];
+}
+
 export function createStockDataFetcher(stockDataService: StockDataService): StockDataFetcher {
 	return {
 		async fetchListData(config: StockListBlockConfig): Promise<StockListDataResult> {
@@ -86,7 +102,9 @@ export function createStockDataFetcher(stockDataService: StockDataService): Stoc
 		},
 
 		async fetchChartData(config: SingleStockBlockConfig): Promise<StockData> {
-			return stockDataService.getStockData(config.symbol, config.days, config.useCandles === true);
+			return config.assetType === 'crypto'
+				? stockDataService.getCryptoData(config.symbol, config.quoteCurrency, config.days, config.useCandles === true)
+				: stockDataService.getStockData(config.symbol, config.days, config.useCandles === true);
 		},
 
 		createListRefreshFetcher(config: StockListBlockConfig): () => Promise<StockListDataResult> {
@@ -97,7 +115,9 @@ export function createStockDataFetcher(stockDataService: StockDataService): Stoc
 
 		createChartRefreshFetcher(config: SingleStockBlockConfig): () => Promise<StockData> {
 			return async (): Promise<StockData> => {
-				return await stockDataService.getStockData(config.symbol, config.days, config.useCandles === true, { forceRefresh: true });
+				return config.assetType === 'crypto'
+					? await stockDataService.getCryptoData(config.symbol, config.quoteCurrency, config.days, config.useCandles === true, { forceRefresh: true })
+					: await stockDataService.getStockData(config.symbol, config.days, config.useCandles === true, { forceRefresh: true });
 			};
 		}
 	};
@@ -105,10 +125,23 @@ export function createStockDataFetcher(stockDataService: StockDataService): Stoc
 
 export const validators = {
 	stockList: (config: StockListBlockConfig): string | null => {
-		return normalizeUniqueTickers(config.tickers).length === 0 ? 'No tickers specified. Add tickers like: tickers: AAPL, MSFT, NVDA' : null;
+		const hasCryptoSymbols = normalizeUniqueTickers(config.cryptos).length > 0;
+		if (hasCryptoSymbols && config.quoteCurrency !== SUPPORTED_CRYPTO_QUOTE_CURRENCY) {
+			return `Only ${SUPPORTED_CRYPTO_QUOTE_CURRENCY} crypto quotes are supported in this version. Use quoteCurrency: ${SUPPORTED_CRYPTO_QUOTE_CURRENCY}`;
+		}
+
+		return createStockListRequests(config).length === 0 ? 'No symbols specified. Add stocks like: stocks: AAPL, MSFT or cryptos like: crypto: BTC or cryptos: BTC, ETH' : null;
 	},
 
 	stockChart: (config: SingleStockBlockConfig): string | null => {
-		return !config.symbol ? 'No symbol specified. Add a symbol like: symbol: AAPL' : null;
+		if (config.stockFieldUsed && config.cryptoFieldUsed) {
+			return 'Specify either a stock symbol or a crypto symbol, not both';
+		}
+
+		if (config.assetType === 'crypto' && config.quoteCurrency !== SUPPORTED_CRYPTO_QUOTE_CURRENCY) {
+			return `Only ${SUPPORTED_CRYPTO_QUOTE_CURRENCY} crypto quotes are supported in this version. Use quoteCurrency: ${SUPPORTED_CRYPTO_QUOTE_CURRENCY}`;
+		}
+
+		return !config.symbol ? 'No symbol specified. Add a stock like: stock: AAPL or a crypto like: crypto: BTC or cryptos: BTC' : null;
 	}
 };

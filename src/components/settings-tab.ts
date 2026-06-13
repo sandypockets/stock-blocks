@@ -27,7 +27,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Data source')
-				.setDesc('Stock data is fetched from Yahoo Finance API with clear error messages if unavailable')
+				.setDesc('Stock and USD crypto data is fetched from Yahoo Finance API with clear error messages if unavailable')
 				.addText(text => {
 					text
 						.setPlaceholder('No API key required')
@@ -101,7 +101,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			.setName('Using the plugin')
 			.setHeading();
 		
-		containerEl.createEl('p', { text: 'Using the plugin is as easy as specifying a single stock symbol in your markdown.' });
+		containerEl.createEl('p', { text: 'Using the plugin is as easy as specifying a single stock or crypto symbol in your markdown.' });
 		const usageContainer = containerEl.createEl('div', { cls: 'stock-blocks-usage' });
 
 		new Setting(usageContainer)
@@ -113,7 +113,17 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			'```'
 		);
 
-		usageContainer.createEl('p', { text: 'When only the stock is specified, the plugin will use the default settings for all other properties. But you can still override the default settings by specifying additional properties in the block.' });
+		new Setting(usageContainer)
+			.setName('Crypto block')
+			.setHeading();
+		this.createCopyableExample(usageContainer,
+			'```stock-block\n' +
+			'crypto: BTC\n' +
+			'quoteCurrency: USD\n' +
+			'```'
+		);
+
+		usageContainer.createEl('p', { text: 'When only the stock or crypto is specified, the plugin will use the default settings for all other properties. But you can still override the default settings by specifying additional properties in the block.' });
 		usageContainer.createEl('p', { text: 'Below is an example of a stock block with all available properties specified. The order of properties does not matter.' });
 
 		new Setting(usageContainer)
@@ -153,7 +163,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		noteHeader.createEl('span', { text: 'Tip - stock property' });
 
 		const noteContent = calloutEl.createEl('div', { cls: 'callout-content stock-callout-content' });
-		noteContent.textContent = 'The main `stock` property is flexible. You can also use `symbol`, `ticker`, or even plural forms like `stocks` or `tickers`.';
+		noteContent.textContent = 'The main `stock` property is flexible. You can also use `symbol`, `ticker`, or even plural forms like `stocks` or `tickers`. Use `crypto` or `cryptos` for cryptocurrency symbols so BTC and ETH are not confused with similarly named stock or ETF symbols.';
 
 		const chartTypeCalloutEl = usageContainer.createEl('div', { cls: 'stock-callout' });
 		
@@ -163,7 +173,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		const chartTypeContent = chartTypeCalloutEl.createEl('div', { cls: 'callout-content stock-callout-content' });
 		
 		const chartTypeIntro = chartTypeContent.createEl('p');
-		chartTypeIntro.textContent = 'Stock blocks support two chart types:';
+		chartTypeIntro.textContent = 'Stock and crypto blocks support two chart types:';
 		
 		const chartTypeList = chartTypeContent.createEl('ul', { cls: 'stock-callout-list' });
 		
@@ -185,6 +195,17 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			'stocks: AAPL, MSFT, NVDA, TSLA, SPY\n' +
 			'```'
 		);
+
+		new Setting(usageContainer)
+			.setName('Mixed stock and crypto list')
+			.setHeading();
+			this.createCopyableExample(usageContainer,
+				'```stock-block-list\n' +
+				'stocks: AAPL, MSFT, NVDA\n' +
+				'crypto: BTC, ETH, SOL\n' +
+				'quoteCurrency: USD\n' +
+				'```'
+			);
 
 		usageContainer.createEl('p', { text: 'To view stocks from international exchanges like the Toronto Stock Exchange (TSX), London Stock Exchange (LSE), or others, simply append the appropriate exchange suffix to the stock symbol.' });
 
@@ -218,6 +239,8 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		this.createCopyableExample(usageContainer,
 			'```stock-block-list\n' +
 			'stocks: AAPL, MSFT, NVDA, TSLA, SPY\n' +
+			'cryptos: BTC, ETH, SOL\n' +
+			'quoteCurrency: USD\n' +
 			'days: 365\n' +
 			'width: 900\n' +
 			'height: 400\n' +
@@ -239,7 +262,7 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		const linkContent = linkCalloutEl.createEl('div', { cls: 'callout-content stock-callout-content' });
 		
 		const introText = linkContent.createEl('p');
-		introText.textContent = 'Stock symbols in a stocklist have three format properties. They are Obsidian wikilinks by default.';
+		introText.textContent = 'Stock and crypto symbols in a stock list have three format properties. They are Obsidian wikilinks by default.';
 		
 		const list = linkContent.createEl('ul', { cls: 'stock-callout-list' });
 		

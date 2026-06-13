@@ -12,13 +12,14 @@ This plugin provides stock data visualization for Obsidian notes with real-time 
 
 ## Features
 
-✅ **Real Yahoo Finance Data** - Live stock prices and historical data  
-✅ **Multiple Display Options** - Static lists, interactive lists, and individual charts  
-✅ **Interactive Features** - Sorting, manual refresh, auto-refresh capabilities  
-✅ **Markdown Integration** - Use code blocks in your notes  
-✅ **Caching** - Intelligent caching to reduce API calls  
-✅ **Error Handling** - Clear error messages when data is unavailable  
-✅ **Responsive Design** - Works on all screen sizes  
+- ✅ **Real Yahoo Finance Data** - Live stock prices and historical data
+- ✅ **Multiple Display Options** - Static lists, interactive lists, and individual charts
+- ✅ **Crypto Charts** - USD cryptocurrency charts and mixed stock/crypto lists
+- ✅ **Interactive Features** - Sorting, manual refresh, auto-refresh capabilities
+- ✅ **Markdown Integration** - Use code blocks in your notes
+- ✅ **Caching** - Intelligent caching to reduce API calls
+- ✅ **Error Handling** - Clear error messages when data is unavailable
+- ✅ **Responsive Design** - Works on all screen sizes
 
 ## Quick Start
 
@@ -49,6 +50,28 @@ days: 30
 width: 500
 height: 300
 showAxes: true
+```
+
+### Individual Crypto Chart
+
+```stock-block
+crypto: BTC
+quoteCurrency: USD
+days: 30
+width: 500
+height: 300
+showAxes: true
+```
+
+### Mixed Stock and Crypto List
+
+```stock-block-list
+stocks: AAPL, MSFT, NVDA
+cryptos: BTC, ETH, SOL
+quoteCurrency: USD
+days: 30
+width: 600
+height: 300
 ```
 
 ## Ease of Use - Minimal Configuration
@@ -94,7 +117,7 @@ All these property names work the same way. If you specify multiple tickers for 
 ## Display Options
 
 ### `stock-block-list` - Stock List (Interactive)
-- **Purpose**: Display of multiple stocks with interactive features
+- **Purpose**: Display of multiple stocks and cryptos with interactive features
 - **Features**: 
   - ✅ Shows symbol, price, change percentage, and sparkline chart
   - ✅ Sortable columns (click headers to sort by symbol, price, or change)
@@ -105,9 +128,9 @@ All these property names work the same way. If you specify multiple tickers for 
 - **Performance**: Lightweight with optional interactive features
 
 ### `stock-block` - Individual Stock Chart
-- **Purpose**: Detailed view of a single stock
+- **Purpose**: Detailed view of a single stock or crypto
 - **Features**: Price chart with configurable time period and styling
-- **Best for**: In-depth analysis of specific stocks
+- **Best for**: In-depth analysis of specific stocks or cryptos
 - **Performance**: Moderate, depends on chart complexity
 
 ## Advanced Examples
@@ -151,6 +174,8 @@ Access the stock dashboard through:
 | Parameter | Description | Default | Example |
 |-----------|-------------|---------|---------|
 | `tickers`, `symbols`, or `stocks` | Comma-separated stock symbols | Required | `AAPL, MSFT, NVDA` |
+| `crypto` or `cryptos` | Comma-separated crypto symbols quoted in USD | Optional | `BTC, ETH, SOL` |
+| `quoteCurrency` | Crypto quote currency | `USD` | `USD` |
 | `days` | Historical data period | 30 | `90` |
 | `width` | Sparkline width in pixels | 500 | `120` |
 | `height` | Sparkline height in pixels | 300 | `40` |
@@ -161,6 +186,8 @@ Access the stock dashboard through:
 | Parameter | Description | Default | Example |
 |-----------|-------------|---------|---------|
 | `symbol`, `symbols`, `stock`, `stocks`, `ticker`, or `tickers` | Stock ticker symbol | Required | `AAPL` |
+| `crypto` or `cryptos` | Crypto symbol quoted in USD. If multiple are provided, the first symbol is used. | Optional | `BTC` |
+| `quoteCurrency` | Crypto quote currency | `USD` | `USD` |
 | `days` | Historical data period | 30 | `90` |
 | `width` | Chart width in pixels | 500 | `600` |
 | `height` | Chart height in pixels | 300 | `350` |
@@ -208,6 +235,48 @@ height: 300
 
 ```stock
 symbol: COIN
+days: 30
+width: 500
+height: 300
+showAxes: true
+```
+
+### Cryptocurrencies
+
+```stock-block-list
+cryptos: BTC, ETH, SOL, DOGE
+quoteCurrency: USD
+days: 30
+width: 600
+height: 300
+```
+
+### Crypto Alias Examples
+
+Both `crypto` and `cryptos` work for one symbol or a comma-separated list.
+
+```stock-block-list
+crypto: BTC
+quoteCurrency: USD
+```
+
+```stock-block-list
+cryptos: BTC, ETH, SOL
+quoteCurrency: USD
+```
+
+For a single chart, either property works. If a list is provided, the first crypto symbol is charted.
+
+```stock-block
+cryptos: BTC, ETH
+quoteCurrency: USD
+```
+
+### Suffixed Yahoo Crypto Symbols
+
+```stock-block
+crypto: PEPE
+quoteCurrency: USD
 days: 30
 width: 500
 height: 300
@@ -264,6 +333,7 @@ The error display will show:
 - **No fallback data**: If Yahoo Finance is unavailable, the plugin will show an error message instead of mock data
 - **Currency support**: Prices automatically display in the appropriate currency (USD, CAD, EUR, GBP, JPY, etc.)
 - Currency detection is based on exchange suffixes (.TO for CAD, .L for GBP, .DE for EUR, etc.)
+- **Crypto support**: Cryptocurrency data uses Yahoo Finance USD crypto quotes. Some Yahoo crypto symbols include CoinMarketCap suffixes, and the plugin resolves those automatically.
 - Historical data shows closing prices
 - The plugin works offline with cached data
 

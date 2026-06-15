@@ -85,10 +85,10 @@ export class StockChartComponent extends Component {
 		const titleRow = headerContainer.createEl('div', { cls: 'stock-chart-title-row' });
 		const symbolContainer = titleRow.createEl('span', { cls: 'stock-chart-symbol' });
 
-		await this.renderSymbol(symbolContainer, this.data.symbol);
+		await this.renderSymbol(symbolContainer, this.data.displaySymbol, this.data.yahooSymbol);
 
 		titleRow.createEl('span', {
-			text: formatPrice(this.data.price, this.data.currency),
+			text: formatPrice(this.data.price, this.data.currency, this.data.pricePrecision),
 			cls: 'stock-chart-price'
 		});
 
@@ -97,13 +97,13 @@ export class StockChartComponent extends Component {
 			const dayText = days === 1 ? '1 day' : `${days} days`;
 
 			titleRow.createEl('span', {
-				text: `${formatPrice(this.data.change, this.data.currency)} (${formatPercentage(this.data.changePercent)}) ${dayText}`,
+				text: `${formatPrice(this.data.change, this.data.currency, this.data.pricePrecision)} (${formatPercentage(this.data.changePercent)}) ${dayText}`,
 				cls: this.data.changePercent >= 0 ? 'stock-chart-change-positive' : 'stock-chart-change-negative'
 			});
 
 			if (this.data.todayChangePercent !== undefined && this.data.todayChange !== undefined) {
 				const todayChangeEl = titleRow.createEl('span', {
-					text: `${formatPrice(this.data.todayChange, this.data.currency)} (${formatPercentage(this.data.todayChangePercent)}) today`,
+					text: `${formatPrice(this.data.todayChange, this.data.currency, this.data.pricePrecision)} (${formatPercentage(this.data.todayChangePercent)}) today`,
 					cls: this.data.todayChangePercent >= 0 ? 'stock-chart-change-positive' : 'stock-chart-change-negative'
 				});
 				todayChangeEl.addClass('stock-chart-today-change');
@@ -113,7 +113,7 @@ export class StockChartComponent extends Component {
 			const dayText = days === 1 ? '1 day' : `${days} days`;
 
 			titleRow.createEl('span', {
-				text: `${formatPrice(this.data.change, this.data.currency)} (${formatPercentage(this.data.changePercent)}) ${dayText}`,
+				text: `${formatPrice(this.data.change, this.data.currency, this.data.pricePrecision)} (${formatPercentage(this.data.changePercent)}) ${dayText}`,
 				cls: this.data.changePercent >= 0 ? 'stock-chart-change-positive' : 'stock-chart-change-negative'
 			});
 		}
@@ -137,7 +137,7 @@ export class StockChartComponent extends Component {
 		});
 
 		container.createEl('span', {
-			text: `Range: ${formatPrice(min, this.data.currency)} – ${formatPrice(max, this.data.currency)} | ${startDate} – ${endDate}`,
+			text: `Range: ${formatPrice(min, this.data.currency, this.data.pricePrecision)} – ${formatPrice(max, this.data.currency, this.data.pricePrecision)} | ${startDate} – ${endDate}`,
 			cls: 'stock-chart-range'
 		});
 	}
@@ -152,8 +152,9 @@ export class StockChartComponent extends Component {
 		const leftSection = container.createEl('div', { cls: 'stock-chart-bottom-left' });
 		const rightSection = container.createEl('div', { cls: 'stock-chart-bottom-right' });
 
-		const dateRange = calculateOptimalDateRange(this.config.days, true);
-		const timeRangeDesc = getTimeRangeDescription(this.config.days, true, dateRange);
+		const useBusinessDays = this.data.assetType !== 'crypto';
+		const dateRange = calculateOptimalDateRange(this.config.days, useBusinessDays);
+		const timeRangeDesc = getTimeRangeDescription(this.config.days, useBusinessDays, dateRange);
 
 		leftSection.createEl('span', {
 			text: timeRangeDesc,
@@ -192,7 +193,8 @@ export class StockChartComponent extends Component {
 				this.config.width,
 				this.config.height,
 				this.config.showAxes,
-				this.data.currency
+				this.data.currency,
+				this.data.pricePrecision
 			)
 			: createInteractiveChart(
 				doc,
@@ -201,7 +203,8 @@ export class StockChartComponent extends Component {
 				this.config.width,
 				this.config.height,
 				this.config.showAxes,
-				this.data.currency
+				this.data.currency,
+				this.data.pricePrecision
 			);
 
 		this.currentChartId = result.chartId;
@@ -268,7 +271,8 @@ export class StockChartComponent extends Component {
 							close: interpolated.close
 						},
 						interpolated.timestamp,
-						chartData.currency
+						chartData.currency,
+						chartData.pricePrecision
 					);
 				}
 				return;
@@ -286,7 +290,8 @@ export class StockChartComponent extends Component {
 					event.clientY,
 					interpolated.price,
 					interpolated.timestamp,
-					chartData.currency
+					chartData.currency,
+					chartData.pricePrecision
 				);
 			}
 		});
@@ -358,7 +363,7 @@ export class StockChartComponent extends Component {
 		this.container.prepend(banner);
 	}
 
-	private async renderSymbol(container: HTMLElement, symbol: string): Promise<void> {
+	private async renderSymbol(container: HTMLElement, symbol: string, yahooSymbol: string = symbol): Promise<void> {
 		switch (this.config.linkStyle) {
 			case 'wikilink':
 				await MarkdownRenderer.render(
@@ -372,7 +377,7 @@ export class StockChartComponent extends Component {
 			case 'markdown': {
 				const link = container.createEl('a', {
 					text: symbol,
-					href: `https://finance.yahoo.com/quote/${symbol}`,
+					href: `https://finance.yahoo.com/quote/${yahooSymbol}`,
 					cls: 'external-link'
 				});
 				link.setAttribute('target', '_blank');

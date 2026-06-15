@@ -2,6 +2,7 @@ import { formatPrice } from './formatters';
 import { calculatePriceRange, calculateChartDimensions } from './math-utils';
 import { ChartData, ChartRenderResult } from '../types';
 import { appendSvgElement, createSvgElement } from './svg-utils';
+import { calculateAxisPadding } from './chart-axis-utils';
 
 export function createChart(
 	prices: number[],
@@ -97,7 +98,8 @@ export function createInteractiveChart(
 	width: number,
 	height: number,
 	showAxes: boolean = false,
-	currency: string = 'USD'
+	currency: string = 'USD',
+	pricePrecision?: number
 ): ChartRenderResult {
 	const chartId = `chart-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 	const svg = createSvgElement(doc, 'svg', {
@@ -116,6 +118,7 @@ export function createInteractiveChart(
 			max: 0,
 			range: 0,
 			currency,
+			pricePrecision,
 			width,
 			height
 		};
@@ -127,10 +130,10 @@ export function createInteractiveChart(
 	}
 
 	if (prices.length === 1) {
-		const padding = showAxes ? 40 : 10;
 		const centerX = width / 2;
 		const centerY = height / 2;
 		const price = prices[0];
+		const padding = calculateAxisPadding(showAxes, width, height, [price], currency, pricePrecision);
 
 		const chartData: ChartData = {
 			points: [{
@@ -147,6 +150,7 @@ export function createInteractiveChart(
 			max: price,
 			range: 0,
 			currency,
+			pricePrecision,
 			width,
 			height,
 			isSinglePoint: true
@@ -167,7 +171,7 @@ export function createInteractiveChart(
 			'text-anchor': 'middle',
 			'font-size': 12,
 			fill: '#374151'
-		}, formatPrice(price, currency));
+		}, formatPrice(price, currency, pricePrecision));
 		appendSvgElement(svg, 'text', {
 			x: centerX,
 			y: centerY + 25,
@@ -191,10 +195,11 @@ export function createInteractiveChart(
 		};
 	}
 
-	const padding = showAxes ? 40 : 10;
+	const { min, max, range } = calculatePriceRange(prices);
+	const midPrice = (min + max) / 2;
+	const padding = calculateAxisPadding(showAxes, width, height, [max, midPrice, min], currency, pricePrecision);
 	const dimensions = calculateChartDimensions(width, height, padding);
 	const { chartWidth, chartHeight, rightBound, bottomBound, midX, midY } = dimensions;
-	const { min, max, range } = calculatePriceRange(prices);
 	const points: { x: number; y: number; price: number; timestamp: number; index: number }[] = [];
 	const pathSegments: string[] = [];
 
@@ -237,14 +242,13 @@ export function createInteractiveChart(
 	});
 
 	if (showAxes) {
-		const midPrice = (min + max) / 2;
 		const startDate = new Date(timestamps[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 		const endDate = new Date(timestamps[timestamps.length - 1]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 		const midDate = new Date(timestamps[Math.floor(timestamps.length / 2)]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-		appendSvgElement(svg, 'text', { x: 5, y: padding + 5, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'start' }, formatPrice(max, currency));
-		appendSvgElement(svg, 'text', { x: 5, y: midY + 3, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'start' }, formatPrice(midPrice, currency));
-		appendSvgElement(svg, 'text', { x: 5, y: bottomBound, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'start' }, formatPrice(min, currency));
+		appendSvgElement(svg, 'text', { x: 5, y: padding + 5, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'start' }, formatPrice(max, currency, pricePrecision));
+		appendSvgElement(svg, 'text', { x: 5, y: midY + 3, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'start' }, formatPrice(midPrice, currency, pricePrecision));
+		appendSvgElement(svg, 'text', { x: 5, y: bottomBound, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'start' }, formatPrice(min, currency, pricePrecision));
 		appendSvgElement(svg, 'text', { x: padding, y: height - 5, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'start' }, startDate);
 		appendSvgElement(svg, 'text', { x: midX, y: height - 5, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'middle' }, midDate);
 		appendSvgElement(svg, 'text', { x: rightBound, y: height - 5, 'font-size': 10, fill: '#6b7280', 'text-anchor': 'end' }, endDate);
@@ -262,6 +266,7 @@ export function createInteractiveChart(
 		max,
 		range,
 		currency,
+		pricePrecision,
 		width,
 		height
 	};

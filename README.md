@@ -58,8 +58,15 @@ Those commands will output a SHA256 checksum for each file. You can then compare
 - Prices displayed with proper currency symbols ($ € £ ¥ etc.)
 - Examples: AAPL (USD), SHOP.TO (CAD), SAP.DE (EUR), ASML.AS (EUR)
 
+### Cryptocurrency Support
+- Display USD crypto charts using Yahoo Finance data
+- Supports simple crypto inputs like BTC, ETH, SOL, DOGE, and ADA
+- Resolves Yahoo's suffixed crypto symbols for assets such as PEPE, SUI, UNI, and TAO
+- Uses calendar days for crypto chart periods because crypto trades seven days a week
+- Preserves stock behavior, so `stock: BTC` is still treated as a stock/ETF symbol while `crypto: BTC` resolves to Bitcoin USD
+
 ### Stock List (`stock-block-list` code block)
-Displays a table of multiple tickers with:
+Displays a table of multiple stock and crypto symbols with:
  - Symbol (optionally as wikilinks)
  - Latest price with currency symbol
  - % change (green/red color coding)
@@ -69,7 +76,7 @@ Displays a table of multiple tickers with:
  - Optional title and description above the table
 
 ### Single Stock Chart (`stock-block` code block)
-Displays a larger chart for one symbol with:
+Displays a larger chart for one stock or crypto symbol with:
  - Header: symbol, price with currency, % change
  - Subtitle: range (min–max) over selected period with currency
  - SVG line chart or candlestick chart with hover tooltip
@@ -86,7 +93,7 @@ To enable candlestick charts, add `useCandles: true` to your stock block configu
 When enabled in settings (enabled by default), the `days` parameter represents trading days rather than calendar days. The plugin ensures sufficient data points for meaningful charts, even for very short periods (1-2 days)
 
 ## Usage Examples
-Learn how to display a list of stocks, or a chart for a single stock. 
+Learn how to display a list of stocks and cryptos, or a chart for a single symbol.
 
 ### Stock List
 The minimum configuration now only requires a list of stocks, which defaults to the last 30 days.
@@ -100,6 +107,8 @@ stocks: AAPL, MSFT, NVDA, SHOP, SPY
 If you need more customization, you can use additional properties:
 
 - `stocks`, `symbols`, or `tickers`: Comma-separated list of stock symbols (any of these property names work)
+- `crypto` or `cryptos`: Comma-separated list of crypto symbols to quote in USD
+- `quoteCurrency`: Crypto quote currency (currently only `USD`, default: USD)
 - `days`: Number of days of historical data (default: 30, interpreted as business days if enabled in settings)
 - `width`: Width of sparklines in pixels (default: 500, capped at 120 for table display)
 - `height`: Height of sparklines in pixels (default: 300, capped at 40 for table display)
@@ -119,6 +128,31 @@ stocks: AAPL
 ```
 ````
 
+### Single Crypto Chart
+Use the `crypto` property for cryptocurrencies. Crypto charts currently use USD quotes from Yahoo Finance.
+
+````markdown
+```stock-block
+crypto: BTC
+quoteCurrency: USD
+```
+````
+
+For crypto symbols that Yahoo stores with a CoinMarketCap suffix, such as PEPE or SUI, the plugin resolves the Yahoo symbol automatically.
+
+You can also use `cryptos` for a single crypto chart. If multiple crypto symbols are provided in a `stock-block`, the first symbol is charted.
+
+### Mixed Stock and Crypto List
+Stock lists can include stocks and cryptos in the same table. Stocks render first by default, followed by cryptos; sorting applies across all rows.
+
+````markdown
+```stock-block-list
+stocks: AAPL, MSFT, NVDA
+cryptos: BTC, ETH, SOL
+quoteCurrency: USD
+```
+````
+
 #### Candlestick Chart
 To display OHLC (Open, High, Low, Close) data as a candlestick chart, add `useCandles: true`:
 
@@ -133,6 +167,8 @@ useCandles: true
 If you need more customization, you can use additional properties:
 
 - `symbol`, `symbols`, `stock`, `stocks`, `ticker`, or `tickers`: Stock symbol to display (any of these property names work)
+- `crypto` or `cryptos`: Crypto symbol to display, quoted in USD. If multiple are provided in a single chart, the first symbol is used.
+- `quoteCurrency`: Crypto quote currency (currently only `USD`, default: USD)
 - `useCandles`: Display as candlestick chart instead of line chart (default: false)
 - `days`: Number of days of historical data (default: 30, interpreted as business days if enabled in settings)
 - `width`: Width of chart in pixels (default: 500)
@@ -175,12 +211,13 @@ Currency Detection Examples:
 - `0700.HK` → HKD (HK$)
 
 ## Data Source
-The plugin fetches real stock data from Yahoo Finance API, which provides free access to:
+The plugin fetches real stock and crypto data from Yahoo Finance API, which provides free access to:
 
 - Current stock prices
+- Current crypto prices in USD
 - Historical price data
 - Daily trading information
-- Support for stocks, ETFs, and major indices
+- Support for stocks, ETFs, major indices, and cryptocurrencies
 
 Features:
 - No API key required
@@ -195,6 +232,12 @@ Supported Symbols:
 - US Stocks: AAPL, MSFT, GOOGL, TSLA, etc.
 - ETFs: SPY, QQQ, VTI, VOO, etc.
 - Indices: ^GSPC (S&P 500), ^IXIC (NASDAQ), ^DJI (Dow Jones)
+- Cryptos: BTC, ETH, SOL, DOGE, ADA, LINK, PEPE, SUI, UNI, TAO, etc. using `crypto:` or `cryptos:` for either one symbol or many symbols.
+
+Crypto Notes:
+- Crypto support is USD-only in this version.
+- Yahoo Finance uses symbols like `BTC-USD` for many assets, but some assets use suffixed symbols like `PEPE24478-USD`; the plugin resolves those automatically.
+- Use `crypto: BTC` for Bitcoin. Bare `stock: BTC` keeps the existing stock/ETF behavior.
 
 The plugin automatically handles API errors and will display clear error messages if the Yahoo Finance service is temporarily unavailable.
 
@@ -244,4 +287,4 @@ Contributions are welcome! Please follow these steps:
 See LICENSE file for details.
 
 ## Disclaimer
-This plugin is for educational and informational purposes only. Stock data is provided by Yahoo Finance and should not be used as the sole basis for investment decisions. Always consult with financial professionals and verify data with official sources before making investment decisions. If the Yahoo Finance API is unavailable, the plugin will display error messages.
+This plugin is for educational and informational purposes only. Stock and crypto data is provided by Yahoo Finance and should not be used as the sole basis for investment decisions. Always consult with financial professionals and verify data with official sources before making investment decisions. If the Yahoo Finance API is unavailable, the plugin will display error messages.

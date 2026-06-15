@@ -1,5 +1,5 @@
 import { MarkdownRenderer, Component, App } from 'obsidian';
-import { StockListBlockConfig, StockData, ChartData, StockDataError, StockListDataResult } from '../types';
+import { AssetType, StockListBlockConfig, StockData, ChartData, StockDataError, StockListDataResult } from '../types';
 import { formatPrice, formatPercentage } from '../utils/formatters';
 import { createTooltip, hideTooltip } from '../utils/tooltip-utils';
 import { createInteractiveSparkline } from '../utils/sparkline-utils';
@@ -9,6 +9,11 @@ import { normalizeUniqueTickers } from '../utils/ticker-utils';
 type StockListDisplayRow =
 	| { type: 'stock'; stock: StockData }
 	| { type: 'error'; error: StockDataError };
+
+interface StockListConfigEntry {
+	symbol: string;
+	assetType: AssetType;
+}
 
 export class StockListComponent extends Component {
 	private container: HTMLElement;
@@ -37,7 +42,7 @@ export class StockListComponent extends Component {
 		const displayData = this.createDisplayStockListData(stockListData);
 		this.data = displayData.stocks;
 		this.errors = displayData.errors;
-		this.refreshErrors = new Map(stockListData.errors.map(error => [error.symbol, error.message]));
+		this.refreshErrors = new Map(stockListData.errors.map(error => [this.createErrorKey(error), error.message]));
 
 		if (updateTimestamp && stockListData.stocks.length > 0) {
 			this.lastUpdate = new Date();
@@ -125,25 +130,26 @@ export class StockListComponent extends Component {
 	}
 
 	private createDisplayStockListData(stockListData: StockListDataResult): StockListDataResult {
-		const previousDataBySymbol = new Map(this.data.map(stock => [stock.symbol, stock]));
-		const incomingDataBySymbol = new Map(stockListData.stocks.map(stock => [stock.symbol, stock]));
-		const errorsBySymbol = new Map(stockListData.errors.map(error => [error.symbol, error]));
+		const previousDataBySymbol = new Map(this.data.map(stock => [this.createStockKey(stock), stock]));
+		const incomingDataBySymbol = new Map(stockListData.stocks.map(stock => [this.createStockKey(stock), stock]));
+		const errorsBySymbol = new Map(stockListData.errors.map(error => [this.createErrorKey(error), error]));
 		const stocks: StockData[] = [];
 		const errors: StockDataError[] = [];
 
-		for (const symbol of normalizeUniqueTickers(this.config.tickers)) {
-			const incomingData = incomingDataBySymbol.get(symbol);
+		for (const entry of this.createConfiguredEntries()) {
+			const entryKey = this.createAssetKey(entry.assetType, entry.symbol);
+			const incomingData = incomingDataBySymbol.get(entryKey);
 			if (incomingData) {
 				stocks.push(incomingData);
 				continue;
 			}
 
-			const error = errorsBySymbol.get(symbol);
+			const error = errorsBySymbol.get(entryKey);
 			if (!error) {
 				continue;
 			}
 
-			const previousData = previousDataBySymbol.get(symbol);
+			const previousData = previousDataBySymbol.get(entryKey);
 			if (previousData) {
 				stocks.push(previousData);
 			} else {
@@ -162,18 +168,19 @@ export class StockListComponent extends Component {
 			];
 		}
 
-		const stocksBySymbol = new Map(this.data.map(stock => [stock.symbol, stock]));
-		const errorsBySymbol = new Map(this.errors.map(error => [error.symbol, error]));
+		const stocksBySymbol = new Map(this.data.map(stock => [this.createStockKey(stock), stock]));
+		const errorsBySymbol = new Map(this.errors.map(error => [this.createErrorKey(error), error]));
 		const rows: StockListDisplayRow[] = [];
 
-		for (const symbol of normalizeUniqueTickers(this.config.tickers)) {
-			const stock = stocksBySymbol.get(symbol);
+		for (const entry of this.createConfiguredEntries()) {
+			const entryKey = this.createAssetKey(entry.assetType, entry.symbol);
+			const stock = stocksBySymbol.get(entryKey);
 			if (stock) {
 				rows.push({ type: 'stock', stock });
 				continue;
 			}
 
-			const error = errorsBySymbol.get(symbol);
+			const error = errorsBySymbol.get(entryKey);
 			if (error) {
 				rows.push({ type: 'error', error });
 			}
@@ -184,19 +191,19 @@ export class StockListComponent extends Component {
 
 	private async renderStockRow(tbody: HTMLElement, stock: StockData): Promise<void> {
 		const row = tbody.createEl('tr', { cls: 'stock-list-row' });
-		const refreshError = this.refreshErrors.get(stock.symbol);
+		const refreshError = this.refreshErrors.get(this.createStockKey(stock));
 		if (refreshError) {
 			row.addClass('stock-list-stale-row');
 		}
 
 		const symbolCell = row.createEl('td', { cls: 'stock-symbol-cell' });
-		await this.renderSymbol(symbolCell, stock.symbol);
+		await this.renderSymbol(symbolCell, stock.displaySymbol, stock.yahooSymbol);
 		if (refreshError) {
 			this.renderRefreshFailureBadge(symbolCell, refreshError);
 		}
 
 		const priceCell = row.createEl('td', { cls: 'stock-price-cell' });
-		priceCell.setText(formatPrice(stock.price, stock.currency));
+		priceCell.setText(formatPrice(stock.price, stock.currency, stock.pricePrecision));
 
 		const changeCell = row.createEl('td', { cls: 'stock-change-cell' });
 		changeCell.createEl('span', {
@@ -270,7 +277,7 @@ export class StockListComponent extends Component {
 		}
 	}
 
-	private async renderSymbol(container: HTMLElement, symbol: string): Promise<void> {
+	private async renderSymbol(container: HTMLElement, symbol: string, yahooSymbol: string = symbol): Promise<void> {
 		switch (this.config.linkStyle) {
 			case 'wikilink':
 				await MarkdownRenderer.render(
@@ -284,7 +291,7 @@ export class StockListComponent extends Component {
 			case 'markdown': {
 				const link = container.createEl('a', {
 					text: symbol,
-					href: `https://finance.yahoo.com/quote/${symbol}`
+					href: `https://finance.yahoo.com/quote/${yahooSymbol}`
 				});
 				link.setAttribute('target', '_blank');
 				link.setAttribute('rel', 'noopener noreferrer');
@@ -308,7 +315,8 @@ export class StockListComponent extends Component {
 			sparklineHeight,
 			color,
 			stock.currency,
-			stock.timestamps
+			stock.timestamps,
+			stock.pricePrecision
 		);
 
 		this.sparklineChartIds.push(result.chartId);
@@ -350,7 +358,8 @@ export class StockListComponent extends Component {
 					event.clientY,
 					closestPoint.price,
 					chartData.currency,
-					closestPoint.timestamp
+					closestPoint.timestamp,
+					chartData.pricePrecision
 				);
 			}
 		});
@@ -380,9 +389,10 @@ export class StockListComponent extends Component {
 		y: number,
 		price: number,
 		currency: string,
-		timestamp?: number
+		timestamp?: number,
+		pricePrecision?: number
 	): void {
-		const formattedPrice = formatPrice(price, currency);
+		const formattedPrice = formatPrice(price, currency, pricePrecision);
 		const doc = tooltip.ownerDocument;
 		const ownerWindow = doc.defaultView ?? window.activeWindow;
 
@@ -537,9 +547,9 @@ export class StockListComponent extends Component {
 		const errors = this.errors.slice();
 
 		for (const stock of this.data) {
-			const message = this.refreshErrors.get(stock.symbol);
+			const message = this.refreshErrors.get(this.createStockKey(stock));
 			if (message) {
-				errors.push({ symbol: stock.symbol, message });
+				errors.push({ symbol: stock.symbol, assetType: stock.assetType, message });
 			}
 		}
 
@@ -614,6 +624,25 @@ export class StockListComponent extends Component {
 	private addEventListenerTracked(element: Element, event: string, handler: EventListener): void {
 		element.addEventListener(event, handler);
 		this.eventListeners.push({ element, event, handler });
+	}
+
+	private createConfiguredEntries(): StockListConfigEntry[] {
+		return [
+			...normalizeUniqueTickers(this.config.tickers).map(symbol => ({ symbol, assetType: 'stock' as const })),
+			...normalizeUniqueTickers(this.config.cryptos).map(symbol => ({ symbol, assetType: 'crypto' as const }))
+		];
+	}
+
+	private createStockKey(stock: StockData): string {
+		return this.createAssetKey(stock.assetType, stock.symbol);
+	}
+
+	private createErrorKey(error: StockDataError): string {
+		return this.createAssetKey(error.assetType || 'stock', error.symbol);
+	}
+
+	private createAssetKey(assetType: AssetType, symbol: string): string {
+		return `${assetType}:${symbol}`;
 	}
 
 	onunload(): void {

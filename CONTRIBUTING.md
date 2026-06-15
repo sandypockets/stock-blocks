@@ -53,6 +53,12 @@ After `npm run build`, test the plugin in a local Obsidian vault:
 4. Test both `stock-block` and `stock-block-list` code blocks.
 5. Check refresh controls, chart tooltips, sorting, link styles, settings, and error states.
 
+### Crypto smoke testing
+
+Use `test-examples.md` as a portable smoke fixture in any local Obsidian test vault. After installing the locally built plugin artifacts, open or copy that note into the vault and verify the valid stock, crypto, mixed list, resolver, and expected error examples.
+
+Crypto smoke checks should confirm that BTC and ETH charts render, mixed stock/crypto lists sort and refresh correctly, Yahoo-suffixed assets such as PEPE or SUI display as user-facing symbols, USD-only validation errors are clear, and derivative matches such as staked or wrapped MATIC variants are not silently accepted for `crypto: MATIC`.
+
 ## Releases
 
 Releases are created by GitHub Actions after a version bump is merged to `main`.

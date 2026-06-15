@@ -50,7 +50,8 @@ export function createInteractiveSparkline(
 	height: number,
 	strokeColor: string = '#3b82f6',
 	currency: string = 'USD',
-	timestamps?: number[]
+	timestamps?: number[],
+	pricePrecision?: number
 ): ChartRenderResult {
 	const chartId = `candles-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 	const svg = createSvgElement(doc, 'svg', {
@@ -69,6 +70,7 @@ export function createInteractiveSparkline(
 			max: 0,
 			range: 0,
 			currency,
+			pricePrecision,
 			width,
 			height
 		};
@@ -99,6 +101,7 @@ export function createInteractiveSparkline(
 			max: price,
 			range: 0,
 			currency,
+			pricePrecision,
 			width,
 			height,
 			hasTimestamps: !!timestamps,
@@ -173,6 +176,7 @@ export function createInteractiveSparkline(
 		max,
 		range,
 		currency,
+		pricePrecision,
 		width,
 		height,
 		hasTimestamps: !!timestamps,

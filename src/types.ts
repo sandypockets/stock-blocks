@@ -5,14 +5,20 @@ export interface OHLCData {
 	close: number;
 }
 
+export type AssetType = 'stock' | 'crypto';
+
 export interface StockData {
 	symbol: string;
+	displaySymbol: string;
+	yahooSymbol: string;
+	assetType: AssetType;
 	price: number;
 	change: number;
 	changePercent: number;
 	todayChange?: number;
 	todayChangePercent?: number;
 	currency: string;
+	pricePrecision?: number;
 	historicalPrices: number[];
 	timestamps: number[];
 	ohlcData?: OHLCData[];
@@ -20,6 +26,7 @@ export interface StockData {
 
 export interface StockDataError {
 	symbol: string;
+	assetType?: AssetType;
 	message: string;
 }
 
@@ -30,6 +37,8 @@ export interface StockListDataResult {
 
 export interface StockListBlockConfig {
 	tickers: string[];
+	cryptos: string[];
+	quoteCurrency: string;
 	days: number;
 	width: number;
 	height: number;
@@ -46,6 +55,10 @@ export interface StockListBlockConfig {
 
 export interface SingleStockBlockConfig {
 	symbol: string;
+	assetType: AssetType;
+	quoteCurrency: string;
+	stockFieldUsed?: boolean;
+	cryptoFieldUsed?: boolean;
 	days: number;
 	width: number;
 	height: number;
@@ -114,6 +127,7 @@ export interface ChartData {
 	max: number;
 	range: number;
 	currency: string;
+	pricePrecision?: number;
 	width: number;
 	height: number;
 	isSinglePoint?: boolean;

@@ -1,5 +1,21 @@
 import { StockListBlockConfig, SingleStockBlockConfig, StockTickerSettings } from '../types';
 
+function parseSymbolList(value: string): string[] {
+	return value.split(',').map(symbol => symbol.trim()).filter(symbol => symbol);
+}
+
+function parseFirstSymbol(value: string): string {
+	return parseSymbolList(value)[0] || '';
+}
+
+function normalizeCryptoConfigSymbol(symbol: string, quoteCurrency: string): string {
+	const trimmedSymbol = symbol.trim();
+	const quoteSuffix = `-${quoteCurrency}`;
+	return trimmedSymbol.toUpperCase().endsWith(quoteSuffix)
+		? trimmedSymbol.slice(0, -quoteSuffix.length)
+		: trimmedSymbol;
+}
+
 export function parseStockListConfig(content: string, settings?: StockTickerSettings): StockListBlockConfig {
 	const lines = content.trim().split('\n');
 	const config: Partial<StockListBlockConfig> = {};
@@ -21,7 +37,14 @@ export function parseStockListConfig(content: string, settings?: StockTickerSett
 			case 'ticker':
 			case 'symbol':
 			case 'stock':
-				config.tickers = value.split(',').map(t => t.trim()).filter(t => t);
+				config.tickers = parseSymbolList(value);
+				break;
+			case 'cryptos':
+			case 'crypto':
+				config.cryptos = parseSymbolList(value);
+				break;
+			case 'quoteCurrency':
+				config.quoteCurrency = value.toUpperCase();
 				break;
 			case 'days': {
 				const days = parseInt(value, 10);
@@ -74,8 +97,14 @@ export function parseStockListConfig(content: string, settings?: StockTickerSett
 			config.sparkline = value.toLowerCase() === 'true';
 			break;
 	}
-}	return {
+	}
+
+	const quoteCurrency = config.quoteCurrency || 'USD';
+
+	return {
 		tickers: config.tickers || [],
+		cryptos: (config.cryptos || []).map(crypto => normalizeCryptoConfigSymbol(crypto, quoteCurrency)),
+		quoteCurrency,
 		days: config.days ?? (settings?.defaultDays ?? 120),
 		width: config.width ?? (settings?.defaultWidth ?? 500),
 		height: config.height ?? (settings?.defaultHeight ?? 400),
@@ -112,12 +141,18 @@ export function parseStockChartConfig(content: string, settings?: StockTickerSet
 			case 'stocks':
 			case 'ticker':
 			case 'tickers':
-				if (key === 'tickers') {
-					const tickers = value.split(',').map(t => t.trim()).filter(t => t);
-					config.symbol = tickers[0] || '';
-				} else {
-					config.symbol = value;
-				}
+				config.stockFieldUsed = true;
+				config.assetType = 'stock';
+				config.symbol = parseFirstSymbol(value);
+				break;
+			case 'crypto':
+			case 'cryptos':
+				config.cryptoFieldUsed = true;
+				config.assetType = 'crypto';
+				config.symbol = parseFirstSymbol(value);
+				break;
+			case 'quoteCurrency':
+				config.quoteCurrency = value.toUpperCase();
 				break;
 			case 'days': {
 				const days = parseInt(value, 10);
@@ -165,8 +200,17 @@ export function parseStockChartConfig(content: string, settings?: StockTickerSet
 		}
 	}
 	
+	const quoteCurrency = config.quoteCurrency || 'USD';
+	const symbol = config.assetType === 'crypto'
+		? normalizeCryptoConfigSymbol(config.symbol || '', quoteCurrency)
+		: config.symbol || '';
+
 	return {
-		symbol: config.symbol || '',
+		symbol,
+		assetType: config.assetType || 'stock',
+		quoteCurrency,
+		stockFieldUsed: config.stockFieldUsed,
+		cryptoFieldUsed: config.cryptoFieldUsed,
 		days: config.days ?? (settings?.defaultDays ?? 120),
 		width: config.width ?? (settings?.defaultWidth ?? 500),
 		height: config.height ?? (settings?.defaultHeight ?? 400),

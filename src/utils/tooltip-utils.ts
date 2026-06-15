@@ -43,9 +43,10 @@ export function updateTooltip(
 	y: number, 
 	price: number, 
 	timestamp: number, 
-	currency: string
+	currency: string,
+	pricePrecision?: number
 ): void {
-	const formattedPrice = formatPrice(price, currency);
+	const formattedPrice = formatPrice(price, currency, pricePrecision);
 	const formattedDate = new Date(timestamp).toLocaleString('en-US', {
 		year: 'numeric',
 		month: 'short',
@@ -77,7 +78,8 @@ export function updateCandlestickTooltip(
 	y: number, 
 	ohlc: { open: number; high: number; low: number; close: number },
 	timestamp: number, 
-	currency: string
+	currency: string,
+	pricePrecision?: number
 ): void {
 	const formattedDate = new Date(timestamp).toLocaleDateString('en-US', {
 		year: 'numeric',
@@ -99,22 +101,22 @@ export function updateCandlestickTooltip(
 	
 	const openRow = doc.createElement('div');
 	openRow.className = 'ohlc-row';
-	openRow.textContent = `O: ${formatPrice(ohlc.open, currency)}`;
+	openRow.textContent = `O: ${formatPrice(ohlc.open, currency, pricePrecision)}`;
 	ohlcDiv.appendChild(openRow);
 	
 	const highRow = doc.createElement('div');
 	highRow.className = 'ohlc-row';
-	highRow.textContent = `H: ${formatPrice(ohlc.high, currency)}`;
+	highRow.textContent = `H: ${formatPrice(ohlc.high, currency, pricePrecision)}`;
 	ohlcDiv.appendChild(highRow);
 	
 	const lowRow = doc.createElement('div');
 	lowRow.className = 'ohlc-row';
-	lowRow.textContent = `L: ${formatPrice(ohlc.low, currency)}`;
+	lowRow.textContent = `L: ${formatPrice(ohlc.low, currency, pricePrecision)}`;
 	ohlcDiv.appendChild(lowRow);
 	
 	const closeRow = doc.createElement('div');
 	closeRow.className = 'ohlc-row';
-	closeRow.textContent = `C: ${formatPrice(ohlc.close, currency)}`;
+	closeRow.textContent = `C: ${formatPrice(ohlc.close, currency, pricePrecision)}`;
 	ohlcDiv.appendChild(closeRow);
 	
 	tooltip.appendChild(ohlcDiv);

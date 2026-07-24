@@ -38,6 +38,21 @@ title: Stock baseline chart
 description: Confirms existing stock chart behavior still works before crypto checks.
 ```
 
+### Stock market statistics
+
+```stock-block
+stock: BTE.TO
+days: 30
+width: 600
+height: 300
+showAxes: true
+marketCap: true
+volume: true
+volumeAvg: true
+title: Stock market statistics
+description: Should show CAD market cap, current or latest session volume, and average volume without affecting the chart.
+```
+
 ## Crypto chart checks
 
 ### BTC line chart
@@ -242,3 +257,4 @@ description: Should not silently resolve to staked, wrapped, or derivative varia
 - Refresh failures preserve stale successful data and show a refresh-failed state.
 - Invalid crypto blocks show clear validation or resolution errors.
 - `stock: BTC` behavior remains separate from `crypto: BTC`.
+- Opt-in market statistics render compact values, while omitted Yahoo values show `N/A` without hiding the chart.

@@ -104,7 +104,12 @@ export function createStockDataFetcher(stockDataService: StockDataService): Stoc
 		async fetchChartData(config: SingleStockBlockConfig): Promise<StockData> {
 			return config.assetType === 'crypto'
 				? stockDataService.getCryptoData(config.symbol, config.quoteCurrency, config.days, config.useCandles === true)
-				: stockDataService.getStockData(config.symbol, config.days, config.useCandles === true);
+				: stockDataService.getStockData(
+					config.symbol,
+					config.days,
+					config.useCandles === true,
+					{ includeMarketCap: config.showMarketCap }
+				);
 		},
 
 		createListRefreshFetcher(config: StockListBlockConfig): () => Promise<StockListDataResult> {
@@ -117,7 +122,15 @@ export function createStockDataFetcher(stockDataService: StockDataService): Stoc
 			return async (): Promise<StockData> => {
 				return config.assetType === 'crypto'
 					? await stockDataService.getCryptoData(config.symbol, config.quoteCurrency, config.days, config.useCandles === true, { forceRefresh: true })
-					: await stockDataService.getStockData(config.symbol, config.days, config.useCandles === true, { forceRefresh: true });
+					: await stockDataService.getStockData(
+						config.symbol,
+						config.days,
+						config.useCandles === true,
+						{
+							forceRefresh: true,
+							includeMarketCap: config.showMarketCap
+						}
+					);
 			};
 		}
 	};

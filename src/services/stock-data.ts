@@ -2,6 +2,12 @@ import { StockData, CacheEntry, OHLCData, AssetType } from '../types';
 import { requestUrl } from 'obsidian';
 import { calculateOptimalDateRange } from '../utils/date-utils';
 import { getErrorMessage } from '../utils/error-utils';
+import {
+	calculateAverageVolume,
+	MarketCapData,
+	resolveCurrentVolume
+} from '../utils/market-stats';
+import { MarketCapService } from './market-cap';
 
 const YAHOO_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 const SUPPORTED_CRYPTO_QUOTE_CURRENCY = 'USD';
@@ -22,6 +28,7 @@ interface YahooQuote {
 	open?: unknown[];
 	high?: unknown[];
 	low?: unknown[];
+	volume?: unknown[];
 }
 
 interface YahooChartResult {
@@ -29,6 +36,7 @@ interface YahooChartResult {
 		currency?: string;
 		instrumentType?: string;
 		priceHint?: number;
+		regularMarketVolume?: unknown;
 		symbol?: string;
 	};
 	timestamp: number[];
@@ -45,6 +53,7 @@ interface YahooChartResponse {
 
 interface StockDataRequestOptions {
 	forceRefresh?: boolean;
+	includeMarketCap?: boolean;
 }
 
 interface YahooSearchQuote {
@@ -61,6 +70,7 @@ interface StockDataPoint {
 	timestamp: number;
 	price: number;
 	ohlc?: OHLCData;
+	volume?: number;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -78,7 +88,8 @@ function isYahooQuote(value: unknown): value is YahooQuote {
 
 	return (value.open === undefined || Array.isArray(value.open)) &&
 		(value.high === undefined || Array.isArray(value.high)) &&
-		(value.low === undefined || Array.isArray(value.low));
+		(value.low === undefined || Array.isArray(value.low)) &&
+		(value.volume === undefined || Array.isArray(value.volume));
 }
 
 function isYahooChartResult(value: unknown): value is YahooChartResult {
@@ -149,6 +160,10 @@ function isValidPrice(price: unknown): price is number {
 	return price != null && Number.isFinite(Number(price));
 }
 
+function isValidVolume(volume: unknown): volume is number {
+	return typeof volume === 'number' && Number.isFinite(volume) && volume >= 0;
+}
+
 function createOHLCData(open: unknown, high: unknown, low: unknown, close: unknown): OHLCData | null {
 	if (!isValidPrice(open) || !isValidPrice(high) || !isValidPrice(low) || !isValidPrice(close)) {
 		return null;
@@ -165,6 +180,7 @@ function createOHLCData(open: unknown, high: unknown, low: unknown, close: unkno
 export class StockDataService {
 	private cache = new Map<string, CacheEntry>();
 	private pendingRequests = new Map<string, Promise<StockData>>();
+	private marketCapService: MarketCapService;
 	private cryptoSymbolCache = new Map<string, string>();
 	private pendingCryptoSymbolRequests = new Map<string, Promise<string>>();
 	private cacheDuration: number;
@@ -179,6 +195,7 @@ export class StockDataService {
 		this.cacheDuration = cacheDurationMinutes * 60 * 1000; // Convert to milliseconds
 		this.useBusinessDays = useBusinessDays;
 		this.minDataPoints = minDataPoints;
+		this.marketCapService = new MarketCapService(this.cacheDuration, YAHOO_USER_AGENT);
 	}
 
 	async getStockData(
@@ -188,18 +205,37 @@ export class StockDataService {
 		options: StockDataRequestOptions = {}
 	): Promise<StockData> {
 		const cleanSymbol = this.normalizeSymbol(symbol);
+		const includeMarketCap = options.includeMarketCap === true;
 		const cacheKey = this.createCacheKey('stock', cleanSymbol, cleanSymbol, 'USD', days, includeOHLC);
-		return this.getMarketData(
-			'stock',
-			cleanSymbol,
-			cleanSymbol,
-			cleanSymbol,
-			'USD',
-			days,
-			includeOHLC,
-			cacheKey,
-			options
-		);
+		const [stockData, marketCapData] = await Promise.all([
+			this.getMarketData(
+				'stock',
+				cleanSymbol,
+				cleanSymbol,
+				cleanSymbol,
+				'USD',
+				days,
+				includeOHLC,
+				cacheKey,
+				options
+			),
+			this.getOptionalMarketCapData(
+				'stock',
+				cleanSymbol,
+				includeMarketCap,
+				options.forceRefresh === true
+			)
+		]);
+
+		if (!includeMarketCap) {
+			return stockData;
+		}
+
+		return {
+			...stockData,
+			marketCap: marketCapData?.value,
+			marketCapCurrency: marketCapData?.currency
+		};
 	}
 
 	async getCryptoData(
@@ -390,6 +426,7 @@ export class StockDataService {
 		const openPrices = quotes.open;
 		const highPrices = quotes.high;
 		const lowPrices = quotes.low;
+		const volumes = quotes.volume;
 
 		const validData: StockDataPoint[] = [];
 
@@ -402,6 +439,11 @@ export class StockDataService {
 				timestamp: timestamps[i] * 1000,
 				price: Number(closePrices[i])
 			};
+
+			const volume = volumes?.[i];
+			if (isValidVolume(volume)) {
+				dataPoint.volume = volume;
+			}
 
 			if (includeOHLC) {
 				const ohlc = createOHLCData(
@@ -431,6 +473,7 @@ export class StockDataService {
 
 		const historicalPrices = finalData.map(d => d.price);
 		const timestampsMs = finalData.map(d => d.timestamp);
+		const historicalVolumes = finalData.map(d => d.volume);
 
 		let ohlcData: OHLCData[] | undefined;
 		if (includeOHLC) {
@@ -468,6 +511,11 @@ export class StockDataService {
 		const pricePrecision = assetType === 'crypto'
 			? this.calculateCryptoPricePrecision(result.meta?.priceHint, historicalPrices)
 			: undefined;
+		const regularMarketVolume = result.meta && isValidVolume(result.meta.regularMarketVolume)
+			? result.meta.regularMarketVolume
+			: undefined;
+		const volume = resolveCurrentVolume(regularMarketVolume, historicalVolumes);
+		const averageVolume = calculateAverageVolume(historicalVolumes);
 
 		const stockData: StockData = {
 			symbol: displaySymbol,
@@ -481,6 +529,8 @@ export class StockDataService {
 			todayChangePercent,
 			currency,
 			pricePrecision,
+			volume,
+			averageVolume,
 			historicalPrices,
 			timestamps: timestampsMs
 		};
@@ -490,6 +540,23 @@ export class StockDataService {
 		}
 
 		return stockData;
+	}
+
+	private async getOptionalMarketCapData(
+		assetType: AssetType,
+		yahooSymbol: string,
+		includeMarketCap: boolean,
+		forceRefresh: boolean
+	): Promise<MarketCapData | undefined> {
+		if (assetType !== 'stock' || !includeMarketCap) {
+			return undefined;
+		}
+
+		try {
+			return await this.marketCapService.getMarketCap(yahooSymbol, forceRefresh);
+		} catch {
+			return undefined;
+		}
 	}
 
 	private async resolveCryptoSymbol(symbol: string, quoteCurrency: string): Promise<string> {
@@ -648,12 +715,13 @@ export class StockDataService {
 	clearCache(): void {
 		this.cache.clear();
 		this.pendingRequests.clear();
+		this.marketCapService.clearCache();
 		this.cryptoSymbolCache.clear();
 		this.pendingCryptoSymbolRequests.clear();
 	}
 
 	getCacheSize(): number {
-		return this.cache.size;
+		return this.cache.size + this.marketCapService.getCacheSize();
 	}
 
 	getCacheMemorySize(): string {
@@ -666,7 +734,7 @@ export class StockDataService {
 			charBytes: 2
 		};
 
-		let totalBytes = sizes.array; // Map itself
+		let totalBytes = sizes.array + this.marketCapService.getCacheMemorySizeBytes();
 
 		for (const [cacheKey, cacheEntry] of this.cache.entries()) {
 			totalBytes += this.calculateEntrySize(cacheKey, cacheEntry, sizes);
@@ -700,6 +768,12 @@ export class StockDataService {
 		if (stockData.todayChange !== undefined) dataBytes += sizes.number;
 		if (stockData.todayChangePercent !== undefined) dataBytes += sizes.number;
 		if (stockData.pricePrecision !== undefined) dataBytes += sizes.number;
+		if (stockData.marketCap !== undefined) dataBytes += sizes.number;
+		if (stockData.marketCapCurrency !== undefined) {
+			dataBytes += this.calculateStringSize(stockData.marketCapCurrency, sizes);
+		}
+		if (stockData.volume !== undefined) dataBytes += sizes.number;
+		if (stockData.averageVolume !== undefined) dataBytes += sizes.number;
 
 		dataBytes += this.calculateArraySize(stockData.historicalPrices, sizes);
 		dataBytes += this.calculateArraySize(stockData.timestamps, sizes);
@@ -739,6 +813,7 @@ export class StockDataService {
 
 	setCacheDuration(minutes: number): void {
 		this.cacheDuration = minutes * 60 * 1000;
+		this.marketCapService.setCacheDuration(this.cacheDuration);
 	}
 
 	setUseBusinessDays(useBusinessDays: boolean): void {

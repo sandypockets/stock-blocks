@@ -52,6 +52,18 @@ height: 300
 showAxes: true
 ```
 
+### Stock Market Statistics
+
+```stock-block
+stock: BTE.TO
+days: 30
+marketCap: true
+volume: true
+volumeAvg: true
+```
+
+Market statistics are hidden by default. Market cap is stock-only, and average volume uses the valid volume values from the displayed chart period.
+
 ### Individual Crypto Chart
 
 ```stock-block
@@ -192,6 +204,9 @@ Access the stock dashboard through:
 | `width` | Chart width in pixels | 500 | `600` |
 | `height` | Chart height in pixels | 300 | `350` |
 | `showAxes` | Show chart axes | true | `false` |
+| `marketCap` | Show latest available stock market cap | false | `true` |
+| `volume` | Show current or latest session volume | false | `true` |
+| `volumeAvg` | Show average volume across displayed sessions | false | `true` |
 
 ## Technology Stack
 

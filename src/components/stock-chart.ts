@@ -7,6 +7,7 @@ import { createCandlestickChart, interpolateCandlestickPrice } from '../utils/ca
 import { getTimeRangeDescription, calculateOptimalDateRange } from '../utils/date-utils';
 import { calculatePriceRange } from '../utils/math-utils';
 import { getErrorMessage } from '../utils/error-utils';
+import { createMarketStatDisplayItems } from '../utils/market-stat-display';
 
 export class StockChartComponent extends Component {
 	private container: HTMLElement;
@@ -140,6 +141,20 @@ export class StockChartComponent extends Component {
 			text: `Range: ${formatPrice(min, this.data.currency, this.data.pricePrecision)} – ${formatPrice(max, this.data.currency, this.data.pricePrecision)} | ${startDate} – ${endDate}`,
 			cls: 'stock-chart-range'
 		});
+
+		const marketStats = createMarketStatDisplayItems(this.config, this.data);
+
+		if (marketStats.length === 0) {
+			return;
+		}
+
+		const statsContainer = container.createEl('span', { cls: 'stock-chart-market-stats' });
+		for (const stat of marketStats) {
+			statsContainer.createEl('span', {
+				text: `${stat.label}: ${stat.value}`,
+				cls: 'stock-chart-market-stat'
+			});
+		}
 	}
 
 	private renderBottomSection(container: HTMLElement): void {

@@ -19,6 +19,10 @@ export interface StockData {
 	todayChangePercent?: number;
 	currency: string;
 	pricePrecision?: number;
+	marketCap?: number;
+	marketCapCurrency?: string;
+	volume?: number;
+	averageVolume?: number;
 	historicalPrices: number[];
 	timestamps: number[];
 	ohlcData?: OHLCData[];
@@ -70,6 +74,9 @@ export interface SingleStockBlockConfig {
 	title?: string;
 	description?: string;
 	useCandles?: boolean;
+	showMarketCap: boolean;
+	showVolume: boolean;
+	showAverageVolume: boolean;
 }
 
 export interface StockTickerSettings {

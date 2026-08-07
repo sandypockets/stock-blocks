@@ -271,12 +271,29 @@
 }
 
 .stock-chart-subtitle {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.5rem 0.75rem;
 	margin-bottom: 1rem;
 	color: var(--text-muted);
 	font-size: 0.9rem;
 }
 
 .stock-chart-range {
+	font-family: var(--font-monospace);
+}
+
+.stock-chart-market-stats {
+	display: inline-flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.5rem 0.75rem;
+}
+
+.stock-chart-market-stat {
+	padding-left: 0.75rem;
+	border-left: 1px solid var(--background-modifier-border);
 	font-family: var(--font-monospace);
 }
 
@@ -627,6 +644,16 @@ p.stock-list-description {
 	
 	.stock-chart-price {
 		font-size: 1.1rem;
+	}
+
+	.stock-chart-market-stats {
+		display: flex;
+		width: 100%;
+	}
+
+	.stock-chart-market-stat:first-child {
+		padding-left: 0;
+		border-left: 0;
 	}
 	
 	.stock-list-table {

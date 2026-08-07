@@ -197,6 +197,15 @@ export function parseStockChartConfig(content: string, settings?: StockTickerSet
 			case 'useCandles':
 				config.useCandles = value.toLowerCase() === 'true';
 				break;
+			case 'marketCap':
+				config.showMarketCap = value.toLowerCase() === 'true';
+				break;
+			case 'volume':
+				config.showVolume = value.toLowerCase() === 'true';
+				break;
+			case 'volumeAvg':
+				config.showAverageVolume = value.toLowerCase() === 'true';
+				break;
 		}
 	}
 	
@@ -222,5 +231,8 @@ export function parseStockChartConfig(content: string, settings?: StockTickerSet
 		title: config.title,
 		description: config.description,
 		useCandles: config.useCandles ?? false,
+		showMarketCap: config.showMarketCap ?? false,
+		showVolume: config.showVolume ?? false,
+		showAverageVolume: config.showAverageVolume ?? false,
 	};
 }

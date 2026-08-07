@@ -15,6 +15,7 @@ Use this guide when changing Stock Blocks locally or preparing a pull request.
    ```
 4. Run the production checks before submitting:
    ```bash
+   npm test
    npm run lint
    npm run build
    ```
@@ -75,6 +76,7 @@ Use `minor` for new features and `major` for breaking changes. The release workf
 
 - The change is scoped to the reported bug or feature.
 - Documentation and examples are updated when behavior changes.
+- `npm test` passes.
 - `npm run lint` passes.
 - `npm run build` passes.
 - The plugin was tested in Obsidian when UI or rendering behavior changed.

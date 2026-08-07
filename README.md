@@ -79,6 +79,7 @@ Displays a table of multiple stock and crypto symbols with:
 Displays a larger chart for one stock or crypto symbol with:
  - Header: symbol, price with currency, % change
  - Subtitle: range (min–max) over selected period with currency
+ - Optional market cap, current volume, and average volume
  - SVG line chart or candlestick chart with hover tooltip
  - Optional axes showing price values and dates
 
@@ -127,6 +128,19 @@ The minimum configuration now only requires a stock property. The date range def
 stocks: AAPL
 ```
 ````
+
+Market statistics are opt-in:
+
+````markdown
+```stock-block
+stock: BTE.TO
+marketCap: true
+volume: true
+volumeAvg: true
+```
+````
+
+`marketCap` is available for stocks. `volumeAvg` averages the valid Yahoo volume values across the chart's displayed sessions. If Yahoo omits a requested statistic, the chart remains available and shows `N/A` for that value.
 
 ### Single Crypto Chart
 Use the `crypto` property for cryptocurrencies. Crypto charts currently use USD quotes from Yahoo Finance.
@@ -177,6 +191,9 @@ If you need more customization, you can use additional properties:
 - `refreshInterval`: Auto-refresh interval in minutes (optional)
 - `showLastUpdate`: Show last update timestamp and refresh controls (default: true)
 - `showTodayChange`: Show today's change alongside period change when days >= 2 (default: false)
+- `marketCap`: Show the latest available stock market cap (default: false)
+- `volume`: Show current or latest session volume (default: false)
+- `volumeAvg`: Show average volume across the displayed sessions (default: false)
 - `title`: Custom title text (optional, shows above the stock symbol and price)
 - `description`: Descriptive text shown below the title (optional)
 
@@ -217,6 +234,7 @@ The plugin fetches real stock and crypto data from Yahoo Finance API, which prov
 - Current crypto prices in USD
 - Historical price data
 - Daily trading information
+- Optional stock market cap and trading volume
 - Support for stocks, ETFs, major indices, and cryptocurrencies
 
 Features:

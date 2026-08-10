@@ -41,7 +41,7 @@ export class StockChartComponent extends Component {
 		this.eventListeners = [];
 
 		if (!this.data) {
-			this.container.createEl('div', {
+			this.container.createDiv({
 				text: 'No stock data available',
 				cls: 'stock-chart-empty'
 			});
@@ -49,7 +49,7 @@ export class StockChartComponent extends Component {
 		}
 
 		if (this.config.title || this.config.description) {
-			const customHeader = this.container.createEl('div', { cls: 'stock-chart-custom-header' });
+			const customHeader = this.container.createDiv({ cls: 'stock-chart-custom-header' });
 
 			if (this.config.title) {
 				customHeader.createEl('h4', {
@@ -66,29 +66,29 @@ export class StockChartComponent extends Component {
 			}
 		}
 
-		const header = this.container.createEl('div', { cls: 'stock-chart-header' });
+		const header = this.container.createDiv({ cls: 'stock-chart-header' });
 		await this.renderHeader(header);
 
-		const subtitle = this.container.createEl('div', { cls: 'stock-chart-subtitle' });
+		const subtitle = this.container.createDiv({ cls: 'stock-chart-subtitle' });
 		this.renderSubtitle(subtitle);
 
-		const chartContainer = this.container.createEl('div', { cls: 'stock-chart-svg-container' });
+		const chartContainer = this.container.createDiv({ cls: 'stock-chart-svg-container' });
 		this.renderChart(chartContainer);
 
-		const bottomSection = this.container.createEl('div', { cls: 'stock-chart-bottom-section' });
+		const bottomSection = this.container.createDiv({ cls: 'stock-chart-bottom-section' });
 		this.renderBottomSection(bottomSection);
 	}
 
 	private async renderHeader(container: HTMLElement): Promise<void> {
 		if (!this.data) return;
 
-		const headerContainer = container.createEl('div', { cls: 'stock-chart-header-flex' });
-		const titleRow = headerContainer.createEl('div', { cls: 'stock-chart-title-row' });
-		const symbolContainer = titleRow.createEl('span', { cls: 'stock-chart-symbol' });
+		const headerContainer = container.createDiv({ cls: 'stock-chart-header-flex' });
+		const titleRow = headerContainer.createDiv({ cls: 'stock-chart-title-row' });
+		const symbolContainer = titleRow.createSpan({ cls: 'stock-chart-symbol' });
 
 		await this.renderSymbol(symbolContainer, this.data.displaySymbol, this.data.yahooSymbol);
 
-		titleRow.createEl('span', {
+		titleRow.createSpan({
 			text: formatPrice(this.data.price, this.data.currency, this.data.pricePrecision),
 			cls: 'stock-chart-price'
 		});
@@ -97,13 +97,13 @@ export class StockChartComponent extends Component {
 			const days = this.config.days;
 			const dayText = days === 1 ? '1 day' : `${days} days`;
 
-			titleRow.createEl('span', {
+			titleRow.createSpan({
 				text: `${formatPrice(this.data.change, this.data.currency, this.data.pricePrecision)} (${formatPercentage(this.data.changePercent)}) ${dayText}`,
 				cls: this.data.changePercent >= 0 ? 'stock-chart-change-positive' : 'stock-chart-change-negative'
 			});
 
 			if (this.data.todayChangePercent !== undefined && this.data.todayChange !== undefined) {
-				const todayChangeEl = titleRow.createEl('span', {
+				const todayChangeEl = titleRow.createSpan({
 					text: `${formatPrice(this.data.todayChange, this.data.currency, this.data.pricePrecision)} (${formatPercentage(this.data.todayChangePercent)}) today`,
 					cls: this.data.todayChangePercent >= 0 ? 'stock-chart-change-positive' : 'stock-chart-change-negative'
 				});
@@ -113,7 +113,7 @@ export class StockChartComponent extends Component {
 			const days = this.config.days;
 			const dayText = days === 1 ? '1 day' : `${days} days`;
 
-			titleRow.createEl('span', {
+			titleRow.createSpan({
 				text: `${formatPrice(this.data.change, this.data.currency, this.data.pricePrecision)} (${formatPercentage(this.data.changePercent)}) ${dayText}`,
 				cls: this.data.changePercent >= 0 ? 'stock-chart-change-positive' : 'stock-chart-change-negative'
 			});
@@ -137,7 +137,7 @@ export class StockChartComponent extends Component {
 			year: 'numeric'
 		});
 
-		container.createEl('span', {
+		container.createSpan({
 			text: `Range: ${formatPrice(min, this.data.currency, this.data.pricePrecision)} – ${formatPrice(max, this.data.currency, this.data.pricePrecision)} | ${startDate} – ${endDate}`,
 			cls: 'stock-chart-range'
 		});
@@ -148,9 +148,9 @@ export class StockChartComponent extends Component {
 			return;
 		}
 
-		const statsContainer = container.createEl('span', { cls: 'stock-chart-market-stats' });
+		const statsContainer = container.createSpan({ cls: 'stock-chart-market-stats' });
 		for (const stat of marketStats) {
-			statsContainer.createEl('span', {
+			statsContainer.createSpan({
 				text: `${stat.label}: ${stat.value}`,
 				cls: 'stock-chart-market-stat'
 			});
@@ -164,19 +164,19 @@ export class StockChartComponent extends Component {
 			return;
 		}
 
-		const leftSection = container.createEl('div', { cls: 'stock-chart-bottom-left' });
-		const rightSection = container.createEl('div', { cls: 'stock-chart-bottom-right' });
+		const leftSection = container.createDiv({ cls: 'stock-chart-bottom-left' });
+		const rightSection = container.createDiv({ cls: 'stock-chart-bottom-right' });
 
 		const useBusinessDays = this.data.assetType !== 'crypto';
 		const dateRange = calculateOptimalDateRange(this.config.days, useBusinessDays);
 		const timeRangeDesc = getTimeRangeDescription(this.config.days, useBusinessDays, dateRange);
 
-		leftSection.createEl('span', {
+		leftSection.createSpan({
 			text: timeRangeDesc,
 			cls: 'stock-chart-days-info'
 		});
 
-		rightSection.createEl('span', {
+		rightSection.createSpan({
 			text: `Last updated: ${this.lastUpdate.toLocaleTimeString()}`,
 			cls: 'stock-chart-updated'
 		});
@@ -372,10 +372,11 @@ export class StockChartComponent extends Component {
 	private showRefreshError(message: string): void {
 		this.clearRefreshError();
 
-		const banner = this.container.ownerDocument.createElement('div');
-		banner.className = 'stock-refresh-error-banner';
-		banner.textContent = `Refresh failed: ${message}. Showing last successful data.`;
-		this.container.prepend(banner);
+		this.container.createDiv({
+			cls: 'stock-refresh-error-banner',
+			text: `Refresh failed: ${message}. Showing last successful data.`,
+			prepend: true
+		});
 	}
 
 	private async renderSymbol(container: HTMLElement, symbol: string, yahooSymbol: string = symbol): Promise<void> {
@@ -401,7 +402,7 @@ export class StockChartComponent extends Component {
 			}
 			case 'none':
 			default:
-				container.createEl('span', { text: symbol });
+				container.createSpan({ text: symbol });
 				break;
 		}
 	}

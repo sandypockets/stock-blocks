@@ -638,12 +638,15 @@ export class StockDataService {
 		let finalData = validData;
 
 		if (validData.length > days * 2) {
-			const dailyData = new Map<string, StockDataPoint>();
+			const dailyData = new Map<number, StockDataPoint>();
 			for (const dataPoint of validData) {
 				const date = new Date(dataPoint.timestamp);
-				const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+				const dateKey = date.getFullYear() * 10_000
+					+ (date.getMonth() + 1) * 100
+					+ date.getDate();
 
-				if (!dailyData.has(dateKey) || dataPoint.timestamp > dailyData.get(dateKey)!.timestamp) {
+				const existingDataPoint = dailyData.get(dateKey);
+				if (!existingDataPoint || dataPoint.timestamp > existingDataPoint.timestamp) {
 					dailyData.set(dateKey, dataPoint);
 				}
 			}

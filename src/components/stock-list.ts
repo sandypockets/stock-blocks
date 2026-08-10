@@ -61,7 +61,7 @@ export class StockListComponent extends Component {
 		this.renderHeader();
 
 		if (this.data.length === 0 && this.errors.length === 0) {
-			this.container.createEl('div', {
+			this.container.createDiv({
 				text: 'No stock data available',
 				cls: 'stock-list-empty'
 			});
@@ -70,7 +70,7 @@ export class StockListComponent extends Component {
 
 		this.sortData();
 
-		const tableWrapper = this.container.createEl('div', { cls: 'stock-list-table-wrapper' });
+		const tableWrapper = this.container.createDiv({ cls: 'stock-list-table-wrapper' });
 		const table = tableWrapper.createEl('table', { cls: 'stock-list-table' });
 		const thead = table.createEl('thead');
 		const headerRow = thead.createEl('tr');
@@ -96,17 +96,17 @@ export class StockListComponent extends Component {
 		}
 
 		if (this.config.showLastUpdate !== false) {
-			const bottomContainer = tableWrapper.createEl('div', { cls: 'stock-list-bottom-container' });
-			const leftSection = bottomContainer.createEl('div', { cls: 'stock-list-bottom-left' });
+			const bottomContainer = tableWrapper.createDiv({ cls: 'stock-list-bottom-container' });
+			const leftSection = bottomContainer.createDiv({ cls: 'stock-list-bottom-left' });
 			const daysText = this.config.days === 1 ? '1 day' : `${this.config.days} days`;
 
-			leftSection.createEl('span', {
+			leftSection.createSpan({
 				text: `Data period: ${daysText}`,
 				cls: 'stock-list-days-info'
 			});
 
-			const rightSection = bottomContainer.createEl('div', { cls: 'stock-list-bottom-right' });
-			rightSection.createEl('span', {
+			const rightSection = bottomContainer.createDiv({ cls: 'stock-list-bottom-right' });
+			rightSection.createSpan({
 				text: this.hasLoadedData ? `Last updated: ${this.lastUpdate.toLocaleTimeString()}` : 'No successful update yet',
 				cls: 'stock-list-info'
 			});
@@ -206,7 +206,7 @@ export class StockListComponent extends Component {
 		priceCell.setText(formatPrice(stock.price, stock.currency, stock.pricePrecision));
 
 		const changeCell = row.createEl('td', { cls: 'stock-change-cell' });
-		changeCell.createEl('span', {
+		changeCell.createSpan({
 			text: formatPercentage(stock.changePercent),
 			cls: stock.changePercent >= 0 ? 'stock-change-positive' : 'stock-change-negative'
 		});
@@ -214,12 +214,12 @@ export class StockListComponent extends Component {
 		if (this.shouldShowTodayColumn()) {
 			const todayChangeCell = row.createEl('td', { cls: 'stock-today-change-cell' });
 			if (stock.todayChangePercent !== undefined) {
-				todayChangeCell.createEl('span', {
+				todayChangeCell.createSpan({
 					text: formatPercentage(stock.todayChangePercent),
 					cls: stock.todayChangePercent >= 0 ? 'stock-change-positive' : 'stock-change-negative'
 				});
 			} else {
-				todayChangeCell.createEl('span', {
+				todayChangeCell.createSpan({
 					text: 'N/A',
 					cls: 'stock-today-unavailable'
 				});
@@ -233,7 +233,7 @@ export class StockListComponent extends Component {
 	}
 
 	private renderRefreshFailureBadge(container: HTMLElement, message: string): void {
-		const badge = container.createEl('span', {
+		const badge = container.createSpan({
 			text: 'Refresh failed',
 			cls: 'stock-refresh-failed-badge'
 		});
@@ -248,13 +248,13 @@ export class StockListComponent extends Component {
 		symbolCell.setText(error.symbol);
 
 		const priceCell = row.createEl('td', { cls: 'stock-price-cell' });
-		priceCell.createEl('span', {
+		priceCell.createSpan({
 			text: 'Unavailable',
 			cls: 'stock-list-error-value'
 		});
 
 		const changeCell = row.createEl('td', { cls: 'stock-change-cell' });
-		const messageEl = changeCell.createEl('span', {
+		const messageEl = changeCell.createSpan({
 			text: error.message,
 			cls: 'stock-list-row-error-message'
 		});
@@ -262,7 +262,7 @@ export class StockListComponent extends Component {
 
 		if (this.shouldShowTodayColumn()) {
 			const todayChangeCell = row.createEl('td', { cls: 'stock-today-change-cell' });
-			todayChangeCell.createEl('span', {
+			todayChangeCell.createSpan({
 				text: 'N/A',
 				cls: 'stock-today-unavailable'
 			});
@@ -270,7 +270,7 @@ export class StockListComponent extends Component {
 
 		if (this.config.sparkline !== false) {
 			const chartCell = row.createEl('td', { cls: 'stock-chart-cell' });
-			chartCell.createEl('span', {
+			chartCell.createSpan({
 				text: 'Failed to load',
 				cls: 'stock-list-error-value'
 			});
@@ -393,15 +393,14 @@ export class StockListComponent extends Component {
 		pricePrecision?: number
 	): void {
 		const formattedPrice = formatPrice(price, currency, pricePrecision);
-		const doc = tooltip.ownerDocument;
-		const ownerWindow = doc.defaultView ?? window.activeWindow;
+		const ownerWindow = tooltip.ownerDocument.defaultView ?? window.activeWindow;
 
 		tooltip.textContent = '';
 
-		const priceDiv = doc.createElement('div');
-		priceDiv.className = 'tooltip-price';
-		priceDiv.textContent = formattedPrice;
-		tooltip.appendChild(priceDiv);
+		tooltip.createDiv({
+			cls: 'tooltip-price',
+			text: formattedPrice
+		});
 
 		if (timestamp) {
 			const formattedDate = new Date(timestamp).toLocaleDateString('en-US', {
@@ -409,10 +408,10 @@ export class StockListComponent extends Component {
 				month: 'short',
 				day: 'numeric'
 			});
-			const dateDiv = doc.createElement('div');
-			dateDiv.className = 'tooltip-date';
-			dateDiv.textContent = formattedDate;
-			tooltip.appendChild(dateDiv);
+			tooltip.createDiv({
+				cls: 'tooltip-date',
+				text: formattedDate
+			});
 		}
 
 		const rect = tooltip.getBoundingClientRect();
@@ -491,20 +490,21 @@ export class StockListComponent extends Component {
 	private showRefreshError(message: string): void {
 		this.clearRefreshError();
 
-		const banner = this.container.ownerDocument.createElement('div');
-		banner.className = 'stock-refresh-error-banner';
-		banner.textContent = `Refresh failed: ${message}. Showing last successful data.`;
-		this.container.prepend(banner);
+		this.container.createDiv({
+			cls: 'stock-refresh-error-banner',
+			text: `Refresh failed: ${message}. Showing last successful data.`,
+			prepend: true
+		});
 	}
 
 	private renderHeader(): void {
 		if (this.config.title || this.config.description) {
-			const headerInfo = this.container.createEl('div', { cls: 'stock-list-header-basic' });
-			const headerContainer = headerInfo.createEl('div', { cls: 'stock-list-header' });
-			const leftSection = headerContainer.createEl('div', { cls: 'stock-list-header-left' });
+			const headerInfo = this.container.createDiv({ cls: 'stock-list-header-basic' });
+			const headerContainer = headerInfo.createDiv({ cls: 'stock-list-header' });
+			const leftSection = headerContainer.createDiv({ cls: 'stock-list-header-left' });
 
 			if (this.config.title) {
-				const titleSection = leftSection.createEl('div', { cls: 'stock-list-title-section' });
+				const titleSection = leftSection.createDiv({ cls: 'stock-list-title-section' });
 				titleSection.createEl('h4', { text: this.config.title, cls: 'stock-list-title' });
 
 				if (this.config.description) {
@@ -524,7 +524,7 @@ export class StockListComponent extends Component {
 		th.title = `Click to sort by ${text.toLowerCase()}`;
 
 		if (this.config.sortBy === sortKey) {
-			th.createEl('span', {
+			th.createSpan({
 				text: this.config.sortOrder === 'asc' ? ' ↑' : ' ↓',
 				cls: 'stock-list-sort-indicator'
 			});

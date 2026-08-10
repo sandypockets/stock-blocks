@@ -7,6 +7,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null;
 }
 
+function isUnknownArray(value: unknown): value is unknown[] {
+	return Array.isArray(value);
+}
+
 function getMarketCapTimestamp(
 	entry: Record<string, unknown>,
 	timestamps: unknown[],
@@ -29,7 +33,7 @@ function getMarketCapTimestamp(
 }
 
 export function extractLatestMarketCap(response: unknown): MarketCapData | undefined {
-	if (!isRecord(response) || !isRecord(response.timeseries) || !Array.isArray(response.timeseries.result)) {
+	if (!isRecord(response) || !isRecord(response.timeseries) || !isUnknownArray(response.timeseries.result)) {
 		return undefined;
 	}
 
@@ -38,11 +42,11 @@ export function extractLatestMarketCap(response: unknown): MarketCapData | undef
 	let fallbackTimestamp = 0;
 
 	for (const result of response.timeseries.result) {
-		if (!isRecord(result) || !Array.isArray(result.trailingMarketCap)) {
+		if (!isRecord(result) || !isUnknownArray(result.trailingMarketCap)) {
 			continue;
 		}
 
-		const timestamps = Array.isArray(result.timestamp) ? result.timestamp : [];
+		const timestamps = isUnknownArray(result.timestamp) ? result.timestamp : [];
 
 		for (let index = 0; index < result.trailingMarketCap.length; index++) {
 			const entry = result.trailingMarketCap[index];

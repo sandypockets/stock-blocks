@@ -8,6 +8,44 @@ interface StockBlocksPlugin extends Plugin {
 	saveSettings(): Promise<void>;
 }
 
+interface DeclarativeSettingGroup {
+	listEl: HTMLElement;
+}
+
+interface DeclarativeSettingDefinition {
+	name: string;
+	desc: string;
+	aliases?: string[];
+	render: (setting: Setting, group: DeclarativeSettingGroup) => void;
+}
+
+const SETTING_COPY = {
+	dataSource: {
+		name: 'Data source',
+		desc: 'Stock and USD crypto data is fetched from Yahoo Finance API with clear error messages if unavailable'
+	},
+	defaultDays: {
+		name: 'Default days',
+		desc: 'Default number of days for historical data (used when not specified in code blocks)'
+	},
+	useBusinessDays: {
+		name: 'Use business days',
+		desc: 'When enabled, "days" parameters are interpreted as business/trading days rather than calendar days. This ensures better data for short time periods (1-5 days).'
+	},
+	showSparklines: {
+		name: 'Show sparklines by default',
+		desc: 'Default setting for displaying sparkline charts in stock lists. This can be overridden per code block using the "sparkline" property.'
+	},
+	cacheDuration: {
+		name: 'Cache duration',
+		desc: 'How long to cache stock data (in minutes)'
+	},
+	usage: {
+		name: 'Using the plugin',
+		desc: 'Examples and configuration options for stock charts, crypto charts, candlesticks, and stock lists.'
+	}
+} as const;
+
 export class StockBlocksSettingTab extends PluginSettingTab {
 	declare plugin: StockBlocksPlugin;
 
@@ -20,89 +58,98 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		this.renderSettings();
 	}
 
+	getSettingDefinitions(): DeclarativeSettingDefinition[] {
+		return [
+			{
+				...SETTING_COPY.dataSource,
+				render: setting => this.configureDataSourceSetting(setting)
+			},
+			{
+				...SETTING_COPY.defaultDays,
+				render: setting => this.configureDefaultDaysSetting(setting)
+			},
+			{
+				...SETTING_COPY.useBusinessDays,
+				render: setting => this.configureBusinessDaysSetting(setting)
+			},
+			{
+				...SETTING_COPY.showSparklines,
+				render: setting => this.configureSparklinesSetting(setting)
+			},
+			{
+				...SETTING_COPY.cacheDuration,
+				render: setting => this.configureCacheDurationSetting(setting)
+			},
+			{
+				name: 'Clear cache',
+				desc: this.getClearCacheDescription(),
+				render: setting => this.configureClearCacheSetting(setting)
+			},
+			{
+				...SETTING_COPY.usage,
+				aliases: [
+					'Stock block',
+					'Crypto block',
+					'Candlestick chart',
+					'Stock block list',
+					'International stocks',
+					'Link style'
+				],
+				render: (setting, group) => {
+					setting.setHeading();
+					this.renderUsage(group.listEl, false);
+				}
+			}
+		];
+	}
+
 	private renderSettings(): void {
 		const { containerEl } = this;
 
 		containerEl.empty();
 
-		new Setting(containerEl)
-			.setName('Data source')
-				.setDesc('Stock and USD crypto data is fetched from Yahoo Finance API with clear error messages if unavailable')
-				.addText(text => {
-					text
-						.setPlaceholder('No API key required')
-						.setValue('Yahoo Finance (Free)');
-					text.inputEl.readOnly = true;
-				});
+		this.configureDataSourceSetting(
+			new Setting(containerEl)
+				.setName(SETTING_COPY.dataSource.name)
+				.setDesc(SETTING_COPY.dataSource.desc)
+		);
+		this.configureDefaultDaysSetting(
+			new Setting(containerEl)
+				.setName(SETTING_COPY.defaultDays.name)
+				.setDesc(SETTING_COPY.defaultDays.desc)
+		);
+		this.configureBusinessDaysSetting(
+			new Setting(containerEl)
+				.setName(SETTING_COPY.useBusinessDays.name)
+				.setDesc(SETTING_COPY.useBusinessDays.desc)
+		);
+		this.configureSparklinesSetting(
+			new Setting(containerEl)
+				.setName(SETTING_COPY.showSparklines.name)
+				.setDesc(SETTING_COPY.showSparklines.desc)
+		);
+		this.configureCacheDurationSetting(
+			new Setting(containerEl)
+				.setName(SETTING_COPY.cacheDuration.name)
+				.setDesc(SETTING_COPY.cacheDuration.desc)
+		);
+		this.configureClearCacheSetting(
+			new Setting(containerEl)
+				.setName('Clear cache')
+				.setDesc(this.getClearCacheDescription())
+		);
+		this.renderUsage(containerEl, true);
+	}
 
-		new Setting(containerEl)
-			.setName('Default days')
-			.setDesc('Default number of days for historical data (used when not specified in code blocks)')
-			.addSlider(slider => slider
-				.setLimits(7, 365, 1)
-				.setValue(this.plugin.settings.defaultDays)
-				.setDynamicTooltip()
-				.onChange(async (value) => {
-					this.plugin.settings.defaultDays = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Use business days')
-			.setDesc('When enabled, "days" parameters are interpreted as business/trading days rather than calendar days. This ensures better data for short time periods (1-5 days).')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.useBusinessDays)
-				.onChange(async (value) => {
-					this.plugin.settings.useBusinessDays = value;
-					this.plugin.stockDataService.setUseBusinessDays(value);
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Show sparklines by default')
-			.setDesc('Default setting for displaying sparkline charts in stock lists. This can be overridden per code block using the "sparkline" property.')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.defaultShowSparklines)
-				.onChange(async (value) => {
-					this.plugin.settings.defaultShowSparklines = value;
-					await this.plugin.saveSettings();
-				}));
-
-
-		new Setting(containerEl)
-			.setName('Cache duration')
-			.setDesc('How long to cache stock data (in minutes)')
-			.addSlider(slider => slider
-				.setLimits(1, 60, 1)
-				.setValue(this.plugin.settings.cacheDuration)
-				.setDynamicTooltip()
-				.onChange(async (value) => {
-					this.plugin.settings.cacheDuration = value;
-					this.plugin.stockDataService.setCacheDuration(value);
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Clear cache')
-			.setDesc(`Clear all cached stock data (current cache: ${this.plugin.stockDataService.getCacheSize()} entries, ${this.plugin.stockDataService.getCacheMemorySize()})`)
-			.addButton(button => button
-				.setButtonText('Clear cache')
-				.onClick(() => {
-					try {
-						this.plugin.stockDataService.clearCache();
-						new Notice('Stock data cache cleared');
-						this.renderSettings();
-					} catch {
-						new Notice('Error clearing cache');
-					}
-				}));
-
-		new Setting(containerEl)
-			.setName('Using the plugin')
-			.setHeading();
+	private renderUsage(containerEl: HTMLElement, includeHeading: boolean): void {
+		if (includeHeading) {
+			new Setting(containerEl)
+				.setName(SETTING_COPY.usage.name)
+				.setHeading();
+		}
 		
 		containerEl.createEl('p', { text: 'Using the plugin is as easy as specifying a single stock or crypto symbol in your markdown.' });
-		const usageContainer = containerEl.createEl('div', { cls: 'stock-blocks-usage' });
+		const usageContainer = containerEl.createDiv({ cls: 'stock-blocks-usage' });
 
 		new Setting(usageContainer)
 			.setName('Stock block')
@@ -157,20 +204,20 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			'```'
 		);
 
-		const calloutEl = usageContainer.createEl('div', { cls: 'stock-callout' });
+		const calloutEl = usageContainer.createDiv({ cls: 'stock-callout' });
 		
-		const noteHeader = calloutEl.createEl('div', { cls: 'callout-title stock-callout-title' });
-		noteHeader.createEl('span', { text: 'Tip - stock property' });
+		const noteHeader = calloutEl.createDiv({ cls: 'callout-title stock-callout-title' });
+		noteHeader.createSpan({ text: 'Tip - stock property' });
 
-		const noteContent = calloutEl.createEl('div', { cls: 'callout-content stock-callout-content' });
+		const noteContent = calloutEl.createDiv({ cls: 'callout-content stock-callout-content' });
 		noteContent.textContent = 'The main `stock` property is flexible. You can also use `symbol`, `ticker`, or even plural forms like `stocks` or `tickers`. Use `crypto` or `cryptos` for cryptocurrency symbols so BTC and ETH are not confused with similarly named stock or ETF symbols.';
 
-		const chartTypeCalloutEl = usageContainer.createEl('div', { cls: 'stock-callout' });
+		const chartTypeCalloutEl = usageContainer.createDiv({ cls: 'stock-callout' });
 		
-		const chartTypeHeader = chartTypeCalloutEl.createEl('div', { cls: 'callout-title stock-callout-title' });
-		chartTypeHeader.createEl('span', { text: 'Chart types' });
+		const chartTypeHeader = chartTypeCalloutEl.createDiv({ cls: 'callout-title stock-callout-title' });
+		chartTypeHeader.createSpan({ text: 'Chart types' });
 
-		const chartTypeContent = chartTypeCalloutEl.createEl('div', { cls: 'callout-content stock-callout-content' });
+		const chartTypeContent = chartTypeCalloutEl.createDiv({ cls: 'callout-content stock-callout-content' });
 		
 		const chartTypeIntro = chartTypeContent.createEl('p');
 		chartTypeIntro.textContent = 'Stock and crypto blocks support two chart types:';
@@ -254,12 +301,12 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 			'```'
 		);
 
-		const linkCalloutEl = usageContainer.createEl('div', { cls: 'stock-callout' });
+		const linkCalloutEl = usageContainer.createDiv({ cls: 'stock-callout' });
 		
-		const linkHeader = linkCalloutEl.createEl('div', { cls: 'callout-title stock-callout-title' });
-		linkHeader.createEl('span', { text: 'Tip - link style property' });
+		const linkHeader = linkCalloutEl.createDiv({ cls: 'callout-title stock-callout-title' });
+		linkHeader.createSpan({ text: 'Tip - link style property' });
 
-		const linkContent = linkCalloutEl.createEl('div', { cls: 'callout-content stock-callout-content' });
+		const linkContent = linkCalloutEl.createDiv({ cls: 'callout-content stock-callout-content' });
 		
 		const introText = linkContent.createEl('p');
 		introText.textContent = 'Stock and crypto symbols in a stock list have three format properties. They are Obsidian wikilinks by default.';
@@ -282,10 +329,88 @@ export class StockBlocksSettingTab extends PluginSettingTab {
 		markdownItem.appendText(' links to Yahoo Finance');
 	}
 
-	private createCopyableExample(container: HTMLElement, codeText: string): void {
-		const exampleContainer = container.createEl('div', { cls: 'stock-example-container' });
+	private configureDataSourceSetting(setting: Setting): void {
+		setting.addText(text => {
+			text
+				.setPlaceholder('No API key required')
+				.setValue('Yahoo Finance (Free)');
+			text.inputEl.readOnly = true;
+		});
+	}
 
-		// Create a textarea for better copy functionality
+	private configureDefaultDaysSetting(setting: Setting): void {
+		setting.addSlider(slider => slider
+			.setLimits(7, 365, 1)
+			.setValue(this.plugin.settings.defaultDays)
+			.setDynamicTooltip()
+			.onChange(async (value) => {
+				this.plugin.settings.defaultDays = value;
+				await this.plugin.saveSettings();
+			}));
+	}
+
+	private configureBusinessDaysSetting(setting: Setting): void {
+		setting.addToggle(toggle => toggle
+			.setValue(this.plugin.settings.useBusinessDays)
+			.onChange(async (value) => {
+				this.plugin.settings.useBusinessDays = value;
+				this.plugin.stockDataService.setUseBusinessDays(value);
+				await this.plugin.saveSettings();
+			}));
+	}
+
+	private configureSparklinesSetting(setting: Setting): void {
+		setting.addToggle(toggle => toggle
+			.setValue(this.plugin.settings.defaultShowSparklines)
+			.onChange(async (value) => {
+				this.plugin.settings.defaultShowSparklines = value;
+				await this.plugin.saveSettings();
+			}));
+	}
+
+	private configureCacheDurationSetting(setting: Setting): void {
+		setting.addSlider(slider => slider
+			.setLimits(1, 60, 1)
+			.setValue(this.plugin.settings.cacheDuration)
+			.setDynamicTooltip()
+			.onChange(async (value) => {
+				this.plugin.settings.cacheDuration = value;
+				this.plugin.stockDataService.setCacheDuration(value);
+				await this.plugin.saveSettings();
+			}));
+	}
+
+	private configureClearCacheSetting(setting: Setting): void {
+		setting.addButton(button => button
+			.setButtonText('Clear cache')
+			.onClick(() => {
+				try {
+					this.plugin.stockDataService.clearCache();
+					new Notice('Stock data cache cleared');
+					this.refreshSettings();
+				} catch {
+					new Notice('Error clearing cache');
+				}
+			}));
+	}
+
+	private getClearCacheDescription(): string {
+		return `Clear all cached stock data (current cache: ${this.plugin.stockDataService.getCacheSize()} entries, ${this.plugin.stockDataService.getCacheMemorySize()})`;
+	}
+
+	private refreshSettings(): void {
+		const updatableTab = this as PluginSettingTab & { update?: () => void };
+		if (typeof updatableTab.update === 'function') {
+			updatableTab.update();
+			return;
+		}
+
+		this.renderSettings();
+	}
+
+	private createCopyableExample(container: HTMLElement, codeText: string): void {
+		const exampleContainer = container.createDiv({ cls: 'stock-example-container' });
+
 		const textArea = exampleContainer.createEl('textarea', {
 			cls: 'stock-example-code',
 			attr: {

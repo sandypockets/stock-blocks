@@ -30,11 +30,7 @@ function positionTooltip(tooltip: HTMLElement, x: number, y: number): void {
 }
 
 export function createTooltip(doc: Document = window.activeDocument): HTMLElement {
-	const tooltip = doc.createElement('div');
-	tooltip.className = 'stock-chart-tooltip hidden';
-	
-	doc.body.appendChild(tooltip);
-	return tooltip;
+	return doc.body.createDiv({ cls: 'stock-chart-tooltip hidden' });
 }
 
 export function updateTooltip(
@@ -57,17 +53,14 @@ export function updateTooltip(
 	});
 
 	tooltip.textContent = '';
-	const doc = tooltip.ownerDocument;
-	
-	const priceDiv = doc.createElement('div');
-	priceDiv.className = 'tooltip-price';
-	priceDiv.textContent = formattedPrice;
-	tooltip.appendChild(priceDiv);
-	
-	const dateDiv = doc.createElement('div');
-	dateDiv.className = 'tooltip-date';
-	dateDiv.textContent = formattedDate;
-	tooltip.appendChild(dateDiv);
+	tooltip.createDiv({
+		cls: 'tooltip-price',
+		text: formattedPrice
+	});
+	tooltip.createDiv({
+		cls: 'tooltip-date',
+		text: formattedDate
+	});
 
 	positionTooltip(tooltip, x, y);
 }
@@ -89,37 +82,28 @@ export function updateCandlestickTooltip(
 	});
 
 	tooltip.textContent = '';
-	const doc = tooltip.ownerDocument;
-	
-	const dateDiv = doc.createElement('div');
-	dateDiv.className = 'tooltip-date';
-	dateDiv.textContent = formattedDate;
-	tooltip.appendChild(dateDiv);
-	
-	const ohlcDiv = doc.createElement('div');
-	ohlcDiv.className = 'tooltip-ohlc';
-	
-	const openRow = doc.createElement('div');
-	openRow.className = 'ohlc-row';
-	openRow.textContent = `O: ${formatPrice(ohlc.open, currency, pricePrecision)}`;
-	ohlcDiv.appendChild(openRow);
-	
-	const highRow = doc.createElement('div');
-	highRow.className = 'ohlc-row';
-	highRow.textContent = `H: ${formatPrice(ohlc.high, currency, pricePrecision)}`;
-	ohlcDiv.appendChild(highRow);
-	
-	const lowRow = doc.createElement('div');
-	lowRow.className = 'ohlc-row';
-	lowRow.textContent = `L: ${formatPrice(ohlc.low, currency, pricePrecision)}`;
-	ohlcDiv.appendChild(lowRow);
-	
-	const closeRow = doc.createElement('div');
-	closeRow.className = 'ohlc-row';
-	closeRow.textContent = `C: ${formatPrice(ohlc.close, currency, pricePrecision)}`;
-	ohlcDiv.appendChild(closeRow);
-	
-	tooltip.appendChild(ohlcDiv);
+	tooltip.createDiv({
+		cls: 'tooltip-date',
+		text: formattedDate
+	});
+
+	const ohlcDiv = tooltip.createDiv({ cls: 'tooltip-ohlc' });
+	ohlcDiv.createDiv({
+		cls: 'ohlc-row',
+		text: `O: ${formatPrice(ohlc.open, currency, pricePrecision)}`
+	});
+	ohlcDiv.createDiv({
+		cls: 'ohlc-row',
+		text: `H: ${formatPrice(ohlc.high, currency, pricePrecision)}`
+	});
+	ohlcDiv.createDiv({
+		cls: 'ohlc-row',
+		text: `L: ${formatPrice(ohlc.low, currency, pricePrecision)}`
+	});
+	ohlcDiv.createDiv({
+		cls: 'ohlc-row',
+		text: `C: ${formatPrice(ohlc.close, currency, pricePrecision)}`
+	});
 
 	positionTooltip(tooltip, x, y);
 }

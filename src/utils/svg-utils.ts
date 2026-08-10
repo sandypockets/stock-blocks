@@ -30,10 +30,11 @@ export function setSvgAttributes(
 	element: SVGElement,
 	attributes: Record<string, SvgAttributeValue>
 ): void {
-	for (const [name, value] of Object.entries(attributes)) {
+	for (const name in attributes) {
+		const value = attributes[name];
 		if (value === null || value === undefined) {
 			continue;
 		}
-		element.setAttribute(name, String(value));
+		element.setAttr(name, value);
 	}
 }

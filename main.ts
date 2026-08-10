@@ -128,7 +128,7 @@ export default class StockTickerPlugin extends Plugin {
 	}
 
 	private createLoadingElement(el: HTMLElement): HTMLElement {
-		return el.createEl('div', {
+		return el.createDiv({
 			text: 'Loading stock data...',
 			cls: 'stock-loading'
 		});
@@ -146,15 +146,15 @@ export default class StockTickerPlugin extends Plugin {
 	}
 
 	private renderError(el: HTMLElement, message: string): void {
-		const errorContainer = el.createEl('div', { cls: 'stock-error-container' });
+		const errorContainer = el.createDiv({ cls: 'stock-error-container' });
 		
-		const iconEl = errorContainer.createEl('span', { cls: 'stock-error-icon' });
+		const iconEl = errorContainer.createSpan({ cls: 'stock-error-icon' });
 		iconEl.textContent = '⚠️';
 		
-		const messageEl = errorContainer.createEl('div', { cls: 'stock-error-message' });
+		const messageEl = errorContainer.createDiv({ cls: 'stock-error-message' });
 		messageEl.setText(message);
 		
-		const hintEl = errorContainer.createEl('div', { cls: 'stock-error-hint' });
+		const hintEl = errorContainer.createDiv({ cls: 'stock-error-hint' });
 		if (message.includes('Yahoo Finance')) {
 			hintEl.setText('Yahoo Finance API may be temporarily unavailable. Try again later or check your internet connection.');
 		} else {
